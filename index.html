@@ -7,11 +7,19 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
             margin: 0;
             padding: 20px;
             color: #333;
             overflow-y: auto;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            background-size: 200% 200%;
+            animation: gradientBackground 10s ease infinite;
+        }
+
+        @keyframes gradientBackground {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         h1 {
@@ -25,7 +33,7 @@
         .container {
             max-width: 800px;
             margin: 0 auto;
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.9);
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -133,12 +141,21 @@
             color: white;
         }
 
-        #cautionOrderTable tbody tr:nth-child(odd) {
+        #cautionOrderTable tbody tr {
             background-color: #f9f9f9;
+            transition: background-color 0.3s ease;
+        }
+
+        #cautionOrderTable tbody tr:nth-child(odd) {
+            background-color: #e3f2fd;
         }
 
         #cautionOrderTable tbody tr:nth-child(even) {
-            background-color: #e3f2fd;
+            background-color: #f0f4c3;
+        }
+
+        #cautionOrderTable tbody tr:hover {
+            background-color: #ffccbc;
         }
 
         @keyframes fadeIn {
