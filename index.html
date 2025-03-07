@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIGITAL CAUTION ORDER</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgb(201, 91, 91);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            text-emphasis-color: BLACK;
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        #speedZoneInputs {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #speedZonesList {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #speedZonesList li {
+            background: #ecf0f1;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        #speedDisplay {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            animation: slideIn 0.5s ease;
+            display: none; /* Hidden by default */
+        }
+
+        #speedDisplay h2 {
+            margin: 0;
+            font-size: 2rem;
+            color: #2c3e50;
+        }
+
+        #speedDisplay p {
+            margin: 5px 0;
+            font-size: 1.5rem;
+            color: #e74c3c;
+            animation: pulse 1s infinite;
+        }
+
+        #cautionOrderTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            animation: fadeIn 0.5s ease;
+            display: none; /* Hidden by default */
+        }
+
+        #cautionOrderTable th, #cautionOrderTable td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        #cautionOrderTable th {
+            background: #3498db;
+            color: white;
+        }
+
+        #cautionOrderTable tbody tr:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+
+        #cautionOrderTable tbody tr:nth-child(even) {
+            background-color: #e3f2fd;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .colorful-km {
+            font-size: 2rem;
+            font-weight: bold;
+            animation: colorChange 2s infinite;
+        }
+
+        @keyframes colorChange {
+            0% { color: #e74c3c; }
+            25% { color: #3498db; }
+            50% { color: #2ecc71; }
+            75% { color: #f1c40f; }
+            100% { color: #e74c3c; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DIGITAL CAUTION ORDER</h1>
+
+        <!-- Inputs for Start and End Place/Kilometer -->
+        <label for="startPlace">Start Place:</label>
+        <input type="text" id="startPlace" placeholder="Enter Start Place" />
+
+        <label for="startKm">Start Kilometer:</label>
+        <input type="number" id="startKm" placeholder="Enter Start Kilometer" />
+
+        <label for="endPlace">End Place:</label>
+        <input type="text" id="endPlace" placeholder="Enter End Place" />
+
+        <label for="endKm">End Kilometer:</label>
+        <input type="number" id="endKm" placeholder="Enter End Kilometer" />
+
+        <button onclick="addSpeedZone()">Add</button>
+
+        <!-- Speed Zone Inputs -->
+        <div id="speedZoneInputs">
+            <label for="fromKm">From Kilometer:</label>
+            <input type="number" id="fromKm" placeholder="Enter From Kilometer" />
+
+            <label for="toKm">To Kilometer:</label>
+            <input type="number" id="toKm" placeholder="Enter To Kilometer" />
+
+            <label for="speedLimit">Speed Limit (km/h):</label>
+            <input type="number" id="speedLimit" placeholder="Enter Speed Limit" />
+
+            <button onclick="saveSpeedZone()">Save Speed Zone</button>
+        </div><br>
+
+        <!-- View Caution Order Button -->
+        <button id="viewCautionOrderBtn" style="display: none;" onclick="viewCautionOrder()">View Caution Order</button>
+        <br>
+        <!-- Start Button -->
+        <button id="startBtn" style="display: none;" onclick="startTracking()">Start</button>
+        
+        <!-- Speed Zones List -->
+        <h2>Speed Zones Set:</h2>
+        <ul id="speedZonesList"></ul>
+
+        <!-- Caution Order Table -->
+        <table id="cautionOrderTable">
+            <thead>
+                <tr>
+                    <th>From Km</th>
+                    <th>To Km</th>
+                    <th>Speed Limit (km/h)</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- Speed Display -->
+    <div id="speedDisplay">
+        <h2>Speed</h2>
+        <p id="currentSpeed">0 km/h</p>
+        <h2>Upcoming Km</h2>
+        <p id="upcomingKm" class="colorful-km">0</p>
+    </div>
+
+    <script>
+        let speedZones = [];
+        let currentKm = 0;
+        let currentSpeed = 0;
+        let lastPosition = null;
+        let isTracking = false;
+
+        // Function to handle the "Add" button click
+        function addSpeedZone() {
+            document.getElementById('speedZoneInputs').style.display = 'block';
+            document.getElementById('viewCautionOrderBtn').style.display = 'block';
+            document.getElementById('startBtn').style.display = 'block';
+        }
+
+        // Function to save the speed zone
+        function saveSpeedZone() {
+            const startKm = parseFloat(document.getElementById('startKm').value);
+            const fromKm = parseFloat(document.getElementById('fromKm').value);
+            const toKm = parseFloat(document.getElementById('toKm').value);
+            const speedLimit = parseInt(document.getElementById('speedLimit').value);
+
+            if (isNaN(fromKm) || isNaN(toKm) || isNaN(speedLimit) || toKm <= fromKm) {
+                alert('Please enter valid numbers for From Kilometer, To Kilometer, and Speed Limit.');
+                return;
+            }
+
+            speedZones.push({ fromKm: startKm + fromKm, toKm: startKm + toKm, speedLimit: speedLimit });
+
+            const speedZoneList = document.getElementById('speedZonesList');
+            const listItem = document.createElement('li');
+            listItem.textContent = `From Km: ${startKm + fromKm} to Km: ${startKm + toKm} - Speed Limit: ${speedLimit} km/h`;
+            speedZoneList.appendChild(listItem);
+
+            alert(`Speed zone added from km ${startKm + fromKm} to km ${startKm + toKm} with speed limit of ${speedLimit} km/h`);
+
+            document.getElementById('fromKm').value = '';
+            document.getElementById('toKm').value = '';
+            document.getElementById('speedLimit').value = '';
+        }
+
+        // Function to view caution order in a table
+        function viewCautionOrder() {
+            const table = document.getElementById('cautionOrderTable');
+            const tbody = table.querySelector('tbody');
+            tbody.innerHTML = '';
+
+            speedZones.forEach(zone => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${zone.fromKm}</td>
+                    <td>${zone.toKm}</td>
+                    <td>${zone.speedLimit}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            table.style.display = 'table';
+        }
+
+        // Function to start tracking
+        function startTracking() {
+            isTracking = true;
+            document.getElementById('speedDisplay').style.display = 'block';
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(handleGeolocationSuccess, handleGeolocationError, {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                });
+            } else {
+                alert("Geolocation is not supported on this device.");
+            }
+        }
+
+        // Function to handle geolocation updates
+        function handleGeolocationSuccess(position) {
+            if (!isTracking) return;
+
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            currentSpeed = position.coords.speed * 3.6; // Convert m/s to km/h
+
+            if (lastPosition) {
+                const distance = calculateDistance(
+                    lastPosition.coords.latitude,
+                    lastPosition.coords.longitude,
+                    latitude,
+                    longitude
+                );
+                currentKm += distance;
+            }
+
+            lastPosition = position;
+
+            // Update speed and upcoming kilometer display
+            document.getElementById('currentSpeed').textContent = `${currentSpeed.toFixed(2)} km/h`;
+            document.getElementById('upcomingKm').textContent = `${currentKm.toFixed(2)}`;
+
+            checkSpeedRestrictions();
+        }
+
+        // Function to calculate distance between two coordinates
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth radius in km
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Distance in km
+        }
+
+        // Function to check speed restrictions
+        function checkSpeedRestrictions() {
+            speedZones.forEach(zone => {
+                if (Math.abs(currentKm - zone.fromKm) <= 0.5) {
+                    speak(`Ahead is a speed restriction of ${zone.speedLimit} km/h`);
+                }
+
+                if (currentKm >= zone.fromKm && currentKm <= zone.toKm && currentSpeed > zone.speedLimit) {
+                    speak(`You are overspeeding, please reduce speed!`);
+                }
+            });
+        }
+
+        // Function to trigger speech
+        function speak(message) {
+            const speech = new SpeechSynthesisUtterance(message);
+            speech.lang = 'en-US';
+            speech.rate = 1;
+            speech.pitch = 1;
+            window.speechSynthesis.speak(speech);
+        }
+    </script>
+</body>
+</html>
