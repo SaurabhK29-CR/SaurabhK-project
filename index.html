@@ -1,471 +1,1182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>GPS Time vs Speed — Final Brake Feel & Power Analysis</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-  body{font-family:Arial, sans-serif;margin:20px;background:#fff;color:#111}
-  .controls{text-align:center;margin-bottom:10px}
-  input,select,button{margin:4px;padding:6px 10px;font-size:14px}
-  button{background:#2b6cb0;color:#fff;border:none;border-radius:6px;cursor:pointer}
-  button:hover{background:#1a4f88}
-  canvas{width:100%;height:760px}
-  .legend-note{text-align:center;margin-top:8px;font-size:14px;font-weight:600}
-  table{width:95%;margin:15px auto;border-collapse:collapse;font-size:15px;text-align:center}
-  th,td{border:1px solid #000;padding:6px 8px;font-weight:600}
-  th{background:#f2f2f2}
-  .highlight-irregular{color:red;font-weight:bold;font-size:17px;}
-  .highlight-alert{color:darkorange;font-weight:bold;}
-  .irregular-note{width:90%;margin:15px auto;border:2px solid red;padding:10px;background:#fff5f5;color:#b00000;font-weight:bold;font-size:15px;border-radius:8px;}
-  .page-break{page-break-before:always}
-  @page{size:A4 landscape;margin:12mm 8mm 12mm 8mm}
-  @media print{
-    .controls{display:none}
-    .legend-note{font-size:13px;margin-top:0}
-    canvas{height:650px!important;margin-top:0}
-    .page-break{page-break-before:always}
-    table{width:100%;font-size:13px}
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Speed Profile System - Dashboard</title>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+        }
+
+        /* Animated background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .bg-animation .train {
+            position: absolute;
+            bottom: 20px;
+            left: -200px;
+            animation: moveTrain 20s linear infinite;
+            opacity: 0.2;
+            font-size: 80px;
+            color: white;
+            transform: scaleX(-1);
+        }
+
+        .bg-animation .track {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            overflow: hidden;
+        }
+
+        .bg-animation .track::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+            animation: trackLight 2s linear infinite;
+        }
+
+        .bg-animation .circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .bg-animation .circle:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            top: -150px;
+            left: -150px;
+        }
+
+        .bg-animation .circle:nth-child(2) {
+            width: 500px;
+            height: 500px;
+            bottom: -250px;
+            right: -250px;
+            animation-delay: -3s;
+        }
+
+        .bg-animation .circle:nth-child(3) {
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 30%;
+            animation-delay: -1.5s;
+        }
+
+        @keyframes moveTrain {
+            0% { left: -200px; }
+            100% { left: 100%; }
+        }
+
+        @keyframes trackLight {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .dashboard {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 15px 20px;
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            animation: fadeInDown 1s ease-out;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+
+        .header h1 i {
+            margin-right: 10px;
+            animation: bounce 2s ease-in-out infinite;
+            font-size: 0.9em;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1em;
+            letter-spacing: 1px;
+        }
+
+        .header .track-line {
+            width: 150px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, white, transparent);
+            margin: 8px auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header .track-line::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,0,0.8), transparent);
+            animation: trackLight 2s linear infinite;
+        }
+
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .tab {
+            position: relative;
+            width: 160px;
+            cursor: pointer;
+        }
+
+        .tab-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 12px 10px;
+            text-align: center;
+            color: white;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .tab-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .tab:hover .tab-content::before {
+            left: 100%;
+        }
+
+        .tab:hover .tab-content {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .tab.active .tab-content {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: #fff;
+            transform: scale(1.02);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+        }
+
+        .tab-icon {
+            font-size: 2.2em;
+            margin-bottom: 5px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .tab h3 {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .tab p {
+            font-size: 0.7em;
+            opacity: 0.8;
+        }
+
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 0;
+        }
+
+        .dropdown-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px 25px;
+            max-width: 450px;
+            margin: 0 auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            display: none;
+            width: 100%;
+        }
+
+        .dropdown-container.active {
+            display: block;
+            animation: slideInUp 0.6s ease-out;
+        }
+
+        .dropdown-container h2 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .dropdown-container h2 i {
+            animation: rotate 4s linear infinite;
+            font-size: 1.2em;
+        }
+
+        .dropdown-container h2 span {
+            background: linear-gradient(45deg, #ffd700, #ffa500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        .dropdown {
+            position: relative;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .dropdown select {
+            width: 100%;
+            padding: 14px 18px;
+            font-size: 1em;
+            font-family: 'Poppins', sans-serif;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border: 2px solid transparent;
+        }
+
+        .dropdown select:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .dropdown select:focus {
+            border-color: #ffd700;
+            background: white;
+        }
+
+        .dropdown::after {
+            content: '\f107';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            font-size: 1.1em;
+            pointer-events: none;
+            transition: transform 0.3s;
+        }
+
+        .dropdown:hover::after {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .nav-btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.1em;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(45deg, #ffd700, #ffa500);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.4s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .nav-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .nav-btn:hover {
+            background: linear-gradient(45deg, #ffa500, #ffd700);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+        }
+
+        .nav-btn i {
+            transition: transform 0.3s;
+        }
+
+        .nav-btn:hover i {
+            transform: translateX(5px) rotate(360deg);
+        }
+
+        .welcome-message {
+            text-align: center;
+            color: white;
+            margin: 0 auto;
+            max-width: 500px;
+            animation: fadeIn 1s;
+            padding: 15px;
+        }
+
+        .welcome-message i {
+            font-size: 3em;
+            margin-bottom: 10px;
+            color: #ffd700;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .welcome-message h2 {
+            font-size: 1.6em;
+            margin-bottom: 8px;
+            background: linear-gradient(45deg, #fff, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-message p {
+            font-size: 1em;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .welcome-message .arrow-hint {
+            margin-top: 10px;
+            font-size: 1.3em;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.85em;
+            animation: fadeIn 2s;
+            margin-top: 15px;
+            flex-shrink: 0;
+            padding: 5px 0;
+        }
+
+        .footer i {
+            color: #ff6b6b;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+
+        .footer p {
+            margin: 2px 0;
+        }
+
+        .footer .dedication {
+            cursor: pointer;
+            display: inline-block;
+            transition: all 0.3s ease;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        .footer .dedication:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.05);
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        .footer .dedication i {
+            transition: transform 0.3s ease;
+        }
+
+        .footer .dedication:hover i {
+            transform: scale(1.2);
+        }
+
+        /* Image Modal Styles */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+            cursor: pointer;
+        }
+
+        .image-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: zoomIn 0.3s ease;
+        }
+
+        .image-modal img {
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 15px;
+            box-shadow: 0 0 50px rgba(255,215,0,0.5);
+            border: 3px solid #ffd700;
+        }
+
+        /* Diya Container */
+        .diya-container {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 10px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,165,0,0.2));
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+        }
+
+        .diya {
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s;
+            text-align: center;
+        }
+
+        .diya:hover {
+            transform: scale(1.1);
+        }
+
+        .diya i {
+            font-size: 35px;
+            color: #ff8c00;
+            filter: drop-shadow(0 0 5px rgba(255,140,0,0.8));
+            animation: diyaGlow 1.5s ease-in-out infinite alternate;
+        }
+
+        .diya .flame {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            color: #ff6600;
+            animation: flameFlicker 0.5s ease-in-out infinite alternate;
+            opacity: 0.9;
+        }
+
+        .diya-label {
+            font-size: 10px;
+            color: #ffd700;
+            margin-top: 5px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        @keyframes diyaGlow {
+            0% {
+                text-shadow: 0 0 2px #ff8c00;
+                opacity: 0.8;
+            }
+            100% {
+                text-shadow: 0 0 15px #ff8c00, 0 0 20px #ff6600;
+                opacity: 1;
+            }
+        }
+
+        @keyframes flameFlicker {
+            0% {
+                transform: translateX(-50%) scale(0.8);
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateX(-50%) scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.3s;
+            background: rgba(0,0,0,0.5);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3001;
+        }
+
+        .close-modal:hover {
+            transform: scale(1.1);
+            background: rgba(255,0,0,0.5);
+        }
+
+        /* Flower Effects */
+        .flower-effect {
+            position: fixed;
+            pointer-events: none;
+            z-index: 4000;
+            animation: floatFlower 3s ease-out forwards;
+        }
+
+        .flower-effect i {
+            font-size: 25px;
+            filter: drop-shadow(0 0 5px rgba(255,215,0,0.5));
+        }
+
+        @keyframes floatFlower {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.1); }
+            50% { transform: scale(1); }
+            75% { transform: scale(1.1); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .loading.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #ffd700;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard { padding: 10px; }
+            .header h1 { font-size: 1.8em; }
+            .tab { width: 130px; }
+            .tab-icon { font-size: 1.8em; }
+            .tab h3 { font-size: 1em; }
+            .tab p { font-size: 0.65em; }
+            .dropdown-container { padding: 15px 20px; max-width: 400px; }
+            .welcome-message h2 { font-size: 1.4em; }
+            .diya i { font-size: 25px; }
+            .flower-effect i { font-size: 18px; }
+        }
+
+        @media (max-width: 480px) {
+            .tab-container { gap: 8px; }
+            .tab { width: 100%; max-width: 150px; }
+            .dropdown-container h2 { font-size: 1.3em; }
+            .header h1 { font-size: 1.5em; }
+            .diya-container { gap: 15px; }
+            .diya i { font-size: 20px; }
+        }
+
+        ::-webkit-scrollbar { display: none; }
+    </style>
 </head>
 <body>
-<div class="controls">
-  <input type="file" id="csvFile" accept=".csv" /><br>
-  <input type="text" id="driverName" placeholder="Driver Name" />
-  <input type="text" id="trainNo" placeholder="Train No" />
-  <input type="text" id="section" placeholder="Section" />
-  <input type="text" id="analysedBy" placeholder="Analysed By" /><br>
-  <label>Train Date : </label>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
-  <input type="date" id="runDate" /><br>
-  <label>SPM analysis Date : </label>
-  <input type="date" id="analysedOn" /><br>
+    <div class="bg-animation">
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="track"></div>
+        <div class="train">
+            <i class="fas fa-train"></i>
+        </div>
+    </div>
 
-  <label><b>Start Station:</b></label>
-  <select id="startStation"><option value="">--Select--</option></select>
-  <label><b>End Station:</b></label>
-  <select id="endStation"><option value="">--Select--</option></select>
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+    </div>
 
-  <button id="plotGraph">Plot Graph</button>
-  <button onclick="window.print()">🖨 Print</button>
-</div>
+    <!-- Image Modal with Diya and Flowers -->
+    <div class="image-modal" id="imageModal">
+        <div class="close-modal" onclick="closeModal()">
+            <i class="fas fa-times"></i>
+        </div>
+        <div class="modal-content">
+            <img id="modalImage" src="" alt="My Wife">
+            <!-- Diya at bottom of image -->
+            <div class="diya-container">
+                <div class="diya">
+                    <i class="fas fa-fire"></i>
+                    <div class="flame">✨</div>
+                    <div class="diya-label">ETERNAL LOVE</div>
+                </div>
+                <div class="diya">
+                    <i class="fas fa-lightbulb"></i>
+                    <div class="flame">🔥</div>
+                    <div class="diya-label">GUIDING LIGHT</div>
+                </div>
+                <div class="diya">
+                    <i class="fas fa-heart"></i>
+                    <div class="flame">❤️</div>
+                    <div class="diya-label">UNCONDITIONAL</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<canvas id="speedChart"></canvas>
-<div class="legend-note">
-  ▲ 1000 m Σ 110 m (red = triangle, green = sigma)
-</div>
-<div id="speedTableContainer" class="page-break"></div>
+    <div class="dashboard">
+        <div class="header">
+            <h1>
+                <i class="fas fa-train"></i>
+                Railway Speed Profile System
+            </h1>
+            <div class="track-line"></div>
+            <p>Select your data format and route for analysis</p>
+        </div>
 
-<script>
-let allData = [], currentChart = null;
+        <div class="tab-container">
+            <div class="tab" id="tab-laxven" onclick="activateTab('laxven', 'LAXVEN')">
+                <div class="tab-content">
+                    <div class="tab-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>LAXVEN</h3>
+                    <p>Laxven Data Format</p>
+                </div>
+            </div>
 
-// ====== CSV Import + Dropdown Population ======
-document.getElementById("csvFile").addEventListener("change", (e) => {
-  const f = e.target.files[0];
-  if (!f) return;
-  const r = new FileReader();
-  r.onload = (evt) => {
-    const lines = evt.target.result.split(/\r?\n/).filter((l) => l.trim() !== "");
-    const h = lines[0].split(",").map((v) => v.trim().toLowerCase());
+            <div class="tab" id="tab-telpro" onclick="activateTab('telpro', 'TELPRO')">
+                <div class="tab-content">
+                    <div class="tab-icon">
+                        <i class="fas fa-file-excel"></i>
+                    </div>
+                    <h3>TELPRO</h3>
+                    <p>Telpro Excel Format</p>
+                </div>
+            </div>
 
-    const g = h.findIndex((v) => v.includes("gps time"));
-    const s = h.findIndex((v) => v === "speed");
-    const st = h.findIndex((v) => v.includes("stationcode"));
-    const d = h.findIndex((v) => v.includes("distfromprev"));
+            <div class="tab" id="tab-medha" onclick="activateTab('medha', 'MEDHA')">
+                <div class="tab-content">
+                    <div class="tab-icon">
+                        <i class="fas fa-file-lines"></i>
+                    </div>
+                    <h3>MEDHA</h3>
+                    <p>Medha Text Format</p>
+                </div>
+            </div>
+        </div>
 
-    if (g === -1 || s === -1 || st === -1 || d === -1)
-      return alert("CSV must include Gps Time, Speed, StationCode, distFromPrevLatLng");
+        <div class="content-area">
+            <div class="welcome-message" id="welcomeMessage">
+                <i class="fas fa-hand-pointer"></i>
+                <h2 style="color: #ff6600;">Railway Speed Profile System</h2>
+                <p>Developed By</p>
+                <h3 style="color: yellow;">Saurabh N Kalbande</h3>
+                <p>Under The Guidance of</p>
+                <h3 style="color: yellow;">Shri Himanshu Ramdeo (Sr DEE/TRO)</h3>
+                <h3 style="color: yellow;">Shri Amit Saxena (CLI SPM)</h3>
+                <div class="arrow-hint">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+            </div>
 
-    allData = lines.slice(1).map((l) => {
-      const c = l.split(",");
-      return {
-        gps: (c[g] || "").trim(),
-        spd: parseFloat((c[s] || "").trim()),
-        st: (c[st] || "").trim(),
-        dist: parseFloat((c[d] || "0").trim()) || 0,
-      };
-    }).filter((x) => x.gps && !isNaN(x.spd));
+            <div class="dropdown-container" id="dropdown-laxven">
+                <h2>
+                    <i class="fas fa-route"></i>
+                    <span>LAXVEN</span> Routes
+                </h2>
+                <div class="dropdown">
+                    <select id="laxven-route">
+                        <option value="" disabled selected>Select a route</option>
+                        <option value="IGP-NGP(Dn)">IGP-NGP (Down)</option>
+                        <option value="NGP-IGP(Up)">NGP-IGP (Up)</option>
+                        <option value="IGP-ET(Dn)">IGP-ET (Down)</option>
+                        <option value="ET-IGP(Up)">ET-IGP (Up)</option>
+                    </select>
+                </div>
+                <button class="nav-btn" onclick="navigate('laxven')">
+                    <i class="fas fa-arrow-right"></i>
+                    Go to LAXVEN Analysis
+                    <i class="fas fa-external-link-alt"></i>
+                </button>
+            </div>
 
-    const stationSet = new Set(allData.map((x) => x.st).filter(Boolean));
-    const stations = [...stationSet];
-    const startSel = document.getElementById("startStation");
-    const endSel = document.getElementById("endStation");
-    startSel.innerHTML = '<option value="">--Select--</option>';
-    endSel.innerHTML = '<option value="">--Select--</option>';
-    stations.forEach((st) => {
-      const opt1 = document.createElement("option");
-      opt1.value = st; opt1.textContent = st;
-      const opt2 = opt1.cloneNode(true);
-      startSel.appendChild(opt1);
-      endSel.appendChild(opt2);
-    });
+            <div class="dropdown-container" id="dropdown-telpro">
+                <h2>
+                    <i class="fas fa-route"></i>
+                    <span>TELPRO</span> Routes
+                </h2>
+                <div class="dropdown">
+                    <select id="telpro-route">
+                        <option value="" disabled selected>Select a route</option>
+                        <option value="IGP-NGP(Dn)">IGP-NGP (Down)</option>
+                        <option value="NGP-IGP(Up)">NGP-IGP (Up)</option>
+                        <option value="IGP-ET(Dn)">IGP-ET (Down)</option>
+                        <option value="ET-IGP(Up)">ET-IGP (Up)</option>
+                    </select>
+                </div>
+                <button class="nav-btn" onclick="navigate('telpro')">
+                    <i class="fas fa-arrow-right"></i>
+                    Go to TELPRO Analysis
+                    <i class="fas fa-external-link-alt"></i>
+                </button>
+            </div>
 
-    alert("CSV loaded and station dropdowns populated. Now select start and end stations, then click Plot Graph.");
-  };
-  r.readAsText(f);
-});
+            <div class="dropdown-container" id="dropdown-medha">
+                <h2>
+                    <i class="fas fa-route"></i>
+                    <span>MEDHA</span> Routes
+                </h2>
+                <div class="dropdown">
+                    <select id="medha-route">
+                        <option value="" disabled selected>Select a route</option>
+                        <option value="IGP-NGP(Dn)">IGP-NGP (Down)</option>
+                        <option value="NGP-IGP(Up)">NGP-IGP (Up)</option>
+                        <option value="IGP-ET(Dn)">IGP-ET (Down)</option>
+                        <option value="ET-IGP(Up)">ET-IGP (Up)</option>
+                    </select>
+                </div>
+                <button class="nav-btn" onclick="navigate('medha')">
+                    <i class="fas fa-arrow-right"></i>
+                    Go to MEDHA Analysis
+                    <i class="fas fa-external-link-alt"></i>
+                </button>
+            </div>
+        </div>
 
-function findZeroIndex(d, code, from) {
-  for (let i = from; i < d.length; i++)
-    if (d[i].st === code && d[i].spd === 0) return i;
-  return -1;
-}
+        <div class="footer">
+            <p>
+                <i class="fas fa-heart"></i>
+                <span class="dedication" onclick="openImageModal()" style="color: white;">
+                    This Software Is Dedicated To My Wife Amruta/Shital Saurabh Kalbande
+                </span>
+                <i class="fas fa-heart"></i>
+            </p>
+            <p>
+                <i class="fas fa-heart"></i>
+                A_M_R_U_T_A 
+                <i class="fas fa-heart"></i><br>
+                <i class="fas fa-tachometer-alt"></i>
+                V-01
+            </p>
+        </div>
+    </div>
 
-function calculateDuration(startStr, endStr) {
-  startStr = startStr.trim();
-  endStr = endStr.trim();
+    <script>
+        let currentTab = null;
+        let flowerInterval = null;
 
-  const startParts = startStr.split(" ");
-  const endParts = endStr.split(" ");
-
-  const startTime = startParts.length > 1 ? startParts[1] : startParts[0];
-  const endTime = endParts.length > 1 ? endParts[1] : endParts[0];
-
-  const normalize = (t) => {
-    const bits = t.split(":");
-    if (bits.length === 2) bits.push("00");
-    return bits.map(b => b.padStart(2, "0")).join(":");
-  };
-
-  const toSeconds = (t) => {
-    const [h, m, s] = t.split(":").map(Number);
-    return h * 3600 + m * 60 + s;
-  };
-
-  let diff = toSeconds(endTime) - toSeconds(startTime);
-  if (diff < 0) diff += 24 * 3600;
-
-  const hrs = Math.floor(diff / 3600);
-  const mins = Math.floor((diff % 3600) / 60);
-  const secs = diff % 60;
-
-  return { totalSeconds: diff, formatted: `${hrs}h ${mins}m ${secs}s` };
-}
-
-// ====== Main Plot Graph Logic ======
-document.getElementById("plotGraph").addEventListener("click", () => {
-  if (allData.length === 0) return alert("Please load a CSV file first.");
-  const start = document.getElementById("startStation").value.trim().toUpperCase();
-  const end = document.getElementById("endStation").value.trim().toUpperCase();
-  const driver = document.getElementById("driverName").value.trim();
-  const train = document.getElementById("trainNo").value.trim();
-  const section = document.getElementById("section").value.trim();
-  const runDate = document.getElementById("runDate").value;
-  const analysedBy = document.getElementById("analysedBy").value.trim();
-  const analysedOn = document.getElementById("analysedOn").value;
-
-  const startIdx = allData.findIndex((d) => d.st === start);
-  const endIdx = allData.findIndex((d, i) => i > startIdx && d.st === end);
-  if (startIdx === -1 || endIdx === -1) return alert("Stations not found or invalid order.");
-  const sZero = findZeroIndex(allData, start, startIdx);
-  const eZero = findZeroIndex(allData, end, endIdx);
-  if (sZero === -1 || eZero === -1) return alert("Could not find stop points for given stations.");
-
-  let endRise = -1;
-  for (let i = eZero + 1; i < allData.length; i++) {
-    if (allData[i].spd >= 0.4) { endRise = i; break; }
-  }
-  if (endRise === -1) return alert("No speed rise detected after end station.");
-
-  const seg = allData.slice(sZero, endRise + 1);
-
-  // Format date as dd-mm-yyyy
-  function formatDate(dateStr) {
-    if (!dateStr) return "-";
-    const dateObj = new Date(dateStr);
-    if (isNaN(dateObj)) return "-";
-    const dd = String(dateObj.getDate()).padStart(2, '0');
-    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const yyyy = dateObj.getFullYear();
-    return `${dd}-${mm}-${yyyy}`;
-  }
-
-  // Format datetime as dd-mm-yyyy HH:MM
-  function formatDateTime(dateTimeStr) {
-    if (!dateTimeStr) return "-";
-    const [datePart, timePart] = dateTimeStr.split(" ");
-    if (!datePart || !timePart) return dateTimeStr;
-    
-    const formattedDate = formatDate(datePart);
-    const timeBits = timePart.split(":");
-    const formattedTime = `${timeBits[0]}:${timeBits[1] || '00'}`;
-    
-    return `${formattedDate} ${formattedTime}`;
-  }
-
-  // Generate labels with date in dd-mm-yyyy format
-  let secondCounter = 0, prevTime = "", prevDate = "";
-  const labels = seg.map(x => {
-    const [datePart, timePart] = x.gps.split(" ");
-    const showDate = (datePart !== prevDate);
-    if (x.gps === prevTime) secondCounter++;
-    else { secondCounter = 0; prevTime = x.gps; }
-    prevDate = datePart;
-    const displayDate = showDate ? formatDate(datePart) : "";
-    const displayTime = timePart + (secondCounter > 0 ? ":" + String(secondCounter).padStart(2, "0") : "");
-    return showDate ? `${displayDate} ${displayTime}` : displayTime;
-  });
-
-  const speeds = seg.map(x => x.spd), dists = seg.map(x => x.dist);
-
-  const firstIdx = {}; for (let i = 0; i < seg.length; i++) { const s = seg[i].st; if (s && !firstIdx[s]) firstIdx[s] = i; }
-  const stations = Object.keys(firstIdx).map(s => ({ st: s, index: firstIdx[s], stop: seg[firstIdx[s]].spd === 0 }));
-
-  function detectBrake(seg, min, max, start) {
-    const tol = 0.3, dropPct = 48;
-    for (let i = 0; i < seg.length - 1; i++) {
-      if (seg[i].st !== start) break;
-      const s = seg[i].spd, n = seg[i + 1].spd;
-      if (s >= min && s <= max && n < s - tol) {
-        let minV = n, minIdx = i + 1;
-        for (let k = i + 1; k < seg.length - 1; k++) {
-          if (seg[k].st !== start) break;
-          if (seg[k].spd < minV) { minV = seg[k].spd; minIdx = k; }
-          if (seg[k + 1].spd > seg[k].spd + tol) break;
+        // Function to create flower effects
+        function createFlowerEffect() {
+            const colors = ['#ff6b6b', '#ff8c42', '#ffd700', '#ff69b4', '#ff1493', '#ff4500'];
+            const flowers = ['fas fa-heart', 'fas fa-star', 'fas fa-heart', 'fas fa-heart', 'fas fa-heart'];
+            
+            for (let i = 0; i < 15; i++) {
+                setTimeout(() => {
+                    const flower = document.createElement('div');
+                    flower.className = 'flower-effect';
+                    
+                    const randomFlower = flowers[Math.floor(Math.random() * flowers.length)];
+                    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    flower.innerHTML = `<i class="${randomFlower}" style="color: ${randomColor};"></i>`;
+                    flower.style.position = 'fixed';
+                    flower.style.left = Math.random() * window.innerWidth + 'px';
+                    flower.style.top = window.innerHeight - 50 + 'px';
+                    flower.style.fontSize = (15 + Math.random() * 20) + 'px';
+                    flower.style.animationDuration = (2 + Math.random() * 2) + 's';
+                    flower.style.animationDelay = (i * 0.1) + 's';
+                    
+                    document.body.appendChild(flower);
+                    
+                    setTimeout(() => {
+                        flower.remove();
+                    }, 3000);
+                }, i * 80);
+            }
         }
-        const drop = ((s - minV) / s) * 100;
-        if (drop >= dropPct)
-          return { text: `PASS (↓${s.toFixed(1)}→${minV.toFixed(1)} km/h, ${drop.toFixed(1)}%)`, startIndex: i, endIndex: minIdx, startVal: s, minVal: minV };
-      }
-    }
-    return { text: "FAIL (no event)", startIndex: -1, endIndex: -1 };
-  }
 
-  const feel = detectBrake(seg, 12, 20, start);
-  const power = detectBrake(seg, 65, 85, start);
+        // Continuous flower effect while modal is open
+        function startContinuousFlowers() {
+            if (flowerInterval) clearInterval(flowerInterval);
+            flowerInterval = setInterval(() => {
+                if (document.getElementById('imageModal').classList.contains('active')) {
+                    createFlowerEffect();
+                } else {
+                    clearInterval(flowerInterval);
+                    flowerInterval = null;
+                }
+            }, 1500);
+        }
 
-  const stopStations = [], seen = new Set();
-  for (let i = 0; i < seg.length; i++) {
-    if (seg[i].spd === 0 && seg[i].st && !seen.has(seg[i].st)) {
-      seen.add(seg[i].st);
-      const stopTime = seg[i].gps;
-      let startTime = "-";
-      for (let j = i + 1; j < seg.length; j++) { if (seg[j].spd > 0) { startTime = seg[j].gps; break; } }
-      stopStations.push({ index: i, station: seg[i].st, stopTime, startTime });
-    }
-  }
+        function openImageModal() {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            
+            modalImage.src = 'mywify.jpeg';
+            modal.classList.add('active');
+            
+            // Create initial burst of flowers
+            createFlowerEffect();
+            
+            // Start continuous flower effects
+            startContinuousFlowers();
+            
+            modalImage.onerror = function() {
+                console.error('Image not found: mywify.jpeg');
+                modalImage.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmZmQ3MDAiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSIxNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iIGZpbGw9IiM2NjciPkltYWdlIE5vdCBGb3VuZDwvdGV4dD48L3N2Zz4=';
+                modalImage.style.objectFit = 'contain';
+                showNotification('Image "mywify.jpeg" not found! Please place the image in the same folder.', 'warning');
+            };
+        }
 
-  const distCheck = [1000, 750, 500, 110, 20];
-  const irregularities = [];
-  const speedBeforeStops = stopStations.map(stop => {
-    let res = { station: stop.station, stopTime: stop.stopTime, startTime: stop.startTime };
-    let cum = 0, found = {}, foundIdx = {};
-    for (let i = stop.index; i >= 0; i--) {
-      cum += dists[i] || 0;
-      for (const d of distCheck) {
-        if (!found[d] && cum >= d) { found[d] = seg[i].spd; foundIdx[d] = i; }
-      }
-    }
-    distCheck.forEach(d => { res[`s${d}`] = found[d] ?? "-"; res[`idx${d}`] = foundIdx[d] ?? -1; });
-    if (res.s1000 > 50) irregularities.push(`Station ${res.station}: Speed @1000 m = ${res.s1000} km/h (should be ≤ 50)`);
-    if (res.s20 >= 10) irregularities.push(`Station ${res.station}: Speed @20 m = ${res.s20} km/h (should be ≤ 10)`);
-    return res;
-  });
-
-  const startTimeStr = formatDateTime(seg[0].gps);
-  const endTimeStr = formatDateTime(seg[seg.length - 1].gps);
-  const dur = calculateDuration(seg[0].gps, seg[seg.length - 1].gps);
-  const totalDuration = dur.formatted;
-
-  const maxSpd = Math.max(...seg.map(d => d.spd));
-  const maxTime = seg.find(d => d.spd === maxSpd)?.gps || "-";
-  
-  // Calculate Average Speed
-  const avgSpd = speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length;
-
-  // Generate HTML Summary
-  const summary = `<table style="width:70%;margin:auto;">
-<tr><th colspan="2">Performance Analysis Summary</th></tr>
-<tr><td><b>Driver Name</b></td><td>${driver || "-"}</td></tr>
-<tr><td><b>Train No</b></td><td>${train || "-"}</td></tr>
-<tr><td><b>Section</b></td><td>${section || "-"}</td></tr>
-<tr><td><b>Date</b></td><td>${formatDate(runDate) || "-"}</td></tr>
-<tr><td><b>Start Time</b></td><td>${startTimeStr}</td></tr>
-<tr><td><b>End Time</b></td><td>${endTimeStr}</td></tr>
-<tr><td><b>Total Duration</b></td><td>${totalDuration}</td></tr>
-<tr><td><b>Analyzed By</b></td><td>${analysedBy || "-"}</td></tr>
-<tr><td><b>Analyzed On</b></td><td>${formatDate(analysedOn) || "-"}</td></tr>
-<tr><td><b>Maximum Speed</b></td><td>${maxSpd.toFixed(1)} km/h at ${formatDateTime(maxTime)}</td></tr>
-<tr><td><b>Average Speed</b></td><td>${avgSpd.toFixed(1)} km/h</td></tr>
-<tr><td><b>Brake Feel Test (12–20 km/h)</b></td><td>${feel.text}</td></tr>
-<tr><td><b>Brake Power Test (65–85 km/h)</b></td><td>${power.text}</td></tr></table>`;
-
-  const dataTableRows = speedBeforeStops.map(r => {
-    const cells = distCheck.map(d => {
-      const val = r["s" + d];
-      if (val === "-") return `<td>-</td>`;
-      if (d === 1000 && val > 50) return `<td class='highlight-irregular'>${val}</td>`;
-      if (d === 20 && val >= 10) return `<td class='highlight-alert'>${val}</td>`;
-      return `<td>${val}</td>`;
-    }).join("");
-    return `<tr><td>${r.station}</td><td>${formatDateTime(r.stopTime)}</td><td>${formatDateTime(r.startTime)}</td>${cells}</tr>`;
-  }).join("");
-
-  const dataTable = `<table>
-<tr><th>Station</th><th>Stop Time</th><th>Start Time</th>${distCheck.map(d => `<th>Speed @${d} m</th>`).join("")}</tr>${dataTableRows}</table>`;
-
-  let irregularityNote = "";
-  if (irregularities.length > 0) {
-    irregularityNote = `<div class="irregular-note">⚠ <u>Irregularities Detected:</u><br>${irregularities.map(x => "• " + x).join("<br>")}</div>`;
-  }
-
-  document.getElementById("speedTableContainer").innerHTML = summary + "<br>" + dataTable + irregularityNote;
-
-  const fS = new Array(speeds.length).fill(null), fE = new Array(speeds.length).fill(null),
-    pS = new Array(speeds.length).fill(null), pE = new Array(speeds.length).fill(null);
-  if (feel.startIndex !== -1) { fS[feel.startIndex] = feel.startVal; fE[feel.endIndex] = feel.minVal; }
-  if (power.startIndex !== -1) { pS[power.startIndex] = power.startVal; pE[power.endIndex] = power.minVal; }
-
-  function speedColor(s) {
-    if (s <= 20) return "gray";
-    if (s <= 40) return "blue";
-    if (s <= 110) return "green";
-    if (s <= 130) return "orange";
-    return "red";
-  }
-
-  const multiColorLine = {
-    id: "multiColor",
-    afterDatasetsDraw(chart) {
-      const ctx = chart.ctx, m = chart.getDatasetMeta(0), d = m.data;
-      if (!d || d.length < 2) return;
-      ctx.save();
-      ctx.lineWidth = 2;
-      for (let i = 1; i < d.length; i++) {
-        const p = d[i - 1], c = d[i];
-        ctx.beginPath();
-        ctx.strokeStyle = speedColor(chart.data.datasets[0].data[i]);
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(c.x, c.y);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-  };
-
-  const stationLines = {
-    id: "stationLines",
-    afterDatasetsDraw(chart) {
-      const ctx = chart.ctx, m = chart.getDatasetMeta(0), bottom = chart.chartArea.bottom;
-      ctx.save();
-      ctx.font = "bold 10px Arial";
-      ctx.textAlign = "center";
-
-      // Show ALL stations without filtering
-      stations.forEach((s, i) => {
-        const pt = m.data[s.index];
-        if (!pt) return;
-        
-        // Draw vertical line
-        ctx.setLineDash([4, 4]);
-        ctx.strokeStyle = s.stop ? "red" : "gray";
-        ctx.beginPath();
-        ctx.moveTo(pt.x, chart.chartArea.top);
-        ctx.lineTo(pt.x, bottom);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Draw station label with rotated text to save space
-        ctx.fillStyle = s.stop ? "red" : "black";
-        ctx.textBaseline = "top";
-        
-        // Rotate text 45 degrees to fit more labels
-        ctx.save();
-        ctx.translate(pt.x, bottom + 15);
-        ctx.rotate(-Math.PI / 2); // -45 degrees
-        ctx.fillText(s.st, 0, 0);
-        ctx.restore();
-      });
-      
-      ctx.restore();
-    }
-  };
-
-  const distanceMarkers = {
-    id: "distanceMarkers",
-    afterDatasetsDraw(chart) {
-      const ctx = chart.ctx, m = chart.getDatasetMeta(0);
-      if (!m || !m.data) return;
-      ctx.save();
-      speedBeforeStops.forEach(r => {
-        [1000, 110].forEach(d => {
-          const idx = r[`idx${d}`];
-          if (idx >= 0 && idx < seg.length) {
-            const pt = m.data[idx];
-            if (!pt) return;
-            if (d === 1000) {
-              ctx.fillStyle = "blue";
-              ctx.beginPath();
-              ctx.moveTo(pt.x, pt.y - 6);
-              ctx.lineTo(pt.x - 5, pt.y + 5);
-              ctx.lineTo(pt.x + 5, pt.y + 5);
-              ctx.closePath();
-              ctx.fill();
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+            
+            if (flowerInterval) {
+                clearInterval(flowerInterval);
+                flowerInterval = null;
             }
-            if (d === 110) {
-              ctx.fillStyle = "green";
-              ctx.font = "bold 18px Arial";
-              ctx.fillText("Σ", pt.x - 5, pt.y + 6);
+            
+            setTimeout(() => {
+                const modalImage = document.getElementById('modalImage');
+                if (!modal.classList.contains('active')) {
+                    modalImage.src = '';
+                }
+            }, 300);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
             }
-          }
         });
-      });
-      ctx.restore();
-    }
-  };
 
-  const analysisText = {
-    id: "analysisText",
-    afterDraw(chart) {
-      const ctx = chart.ctx;
-      ctx.save();
-      ctx.font = "bold 14px Arial";
-      ctx.fillStyle = "black";
-      ctx.fillText(`Train ${train || ""} ${section || ""}`, chart.chartArea.left + 10, chart.chartArea.top - 10);
-      ctx.restore();
-    }
-  };
+        function activateTab(tabName, displayName) {
+            document.getElementById('welcomeMessage').style.display = 'none';
+            
+            const dropdowns = ['laxven', 'telpro', 'medha'];
+            dropdowns.forEach(d => {
+                const element = document.getElementById(`dropdown-${d}`);
+                if (element) element.classList.remove('active');
+                const tab = document.getElementById(`tab-${d}`);
+                if (tab) tab.classList.remove('active');
+            });
 
-  const ctx = document.getElementById("speedChart").getContext("2d");
-  if (currentChart) currentChart.destroy();
-  currentChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: labels,
-      datasets: [
-        { label: "Speed", data: speeds, borderColor: "#999", borderWidth: 1.5, pointRadius: 0 },
-        { data: fS, borderColor: "red", showLine: false, pointRadius: 6, pointStyle: "circle" },
-        { data: fE, borderColor: "green", showLine: false, pointRadius: 6, pointStyle: "triangle" },
-        { data: pS, borderColor: "blue", showLine: false, pointRadius: 6, pointStyle: "circle" },
-        { data: pE, borderColor: "purple", showLine: false, pointRadius: 6, pointStyle: "triangle" }
-      ]
-    },
-    options: {
-      responsive: true,
-      animation: false,
-      layout: { padding: { top: 40, bottom: 80 } },
-      scales: {
-        x: {
-          title: { display: true, text: "Time (HH:MM:SS)" },
-          ticks: {
-            callback: (v, index, ticks) => {
-              return labels[index] || "";
-            },
-            maxTicksLimit: 50,
-            autoSkip: true,
-            autoSkipPadding: 10,
-            maxRotation: 90,
-            minRotation: 45
-          }
-        },
-        y: { title: { display: true, text: "Speed (km/h)" }, min: 0 }
-      },
-      plugins: { legend: { display: false } }
-    },
-    plugins: [multiColorLine, stationLines, distanceMarkers, analysisText]
-  });
-});
-</script>
+            const selectedTab = document.getElementById(`tab-${tabName}`);
+            if (selectedTab) selectedTab.classList.add('active');
+
+            const dropdown = document.getElementById(`dropdown-${tabName}`);
+            if (dropdown) {
+                dropdown.classList.add('active');
+                const heading = dropdown.querySelector('h2 span');
+                if (heading) heading.textContent = displayName;
+            }
+
+            currentTab = tabName;
+        }
+
+        function navigate(tabName) {
+            const selectElement = document.getElementById(`${tabName}-route`);
+            const selectedRoute = selectElement.value;
+            
+            if (!selectedRoute) {
+                selectElement.style.animation = 'shake 0.5s';
+                setTimeout(() => { selectElement.style.animation = ''; }, 500);
+                showNotification('Please select a route first!', 'warning');
+                return;
+            }
+
+            let displayName = '';
+            switch(tabName) {
+                case 'laxven': displayName = 'LAXVEN'; break;
+                case 'telpro': displayName = 'TELPRO'; break;
+                case 'medha': displayName = 'MEDHA'; break;
+            }
+
+            const routeMap = {
+                'laxven': {
+                    'IGP-NGP(Dn)': 'LaxDN.html',
+                    'NGP-IGP(Up)': 'LaxUP.html',
+                    'IGP-ET(Dn)': 'LaxETDN.html',
+                    'ET-IGP(Up)': 'LaxETUP.html'
+                },
+                'telpro': {
+                    'IGP-NGP(Dn)': 'TelDN.html',
+                    'NGP-IGP(Up)': 'TelUP.html',
+                    'IGP-ET(Dn)': 'TelETDN.html',
+                    'ET-IGP(Up)': 'TelETUP.html'
+                },
+                'medha': {
+                    'IGP-NGP(Dn)': 'MedDN.html',
+                    'NGP-IGP(Up)': 'MedUP.html',
+                    'IGP-ET(Dn)': 'MedETDN.html',
+                    'ET-IGP(Up)': 'MedETUP.html'
+                }
+            };
+
+            const targetFile = routeMap[tabName][selectedRoute];
+            
+            if (targetFile) {
+                document.getElementById('loading').classList.add('active');
+                showNotification(`Navigating to ${displayName} - ${selectedRoute}`, 'success');
+                setTimeout(() => { window.location.href = targetFile; }, 1000);
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed; top: 20px; right: 20px; padding: 12px 20px;
+                border-radius: 8px; color: white; font-weight: 500; z-index: 2000;
+                animation: slideInRight 0.3s ease-out; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                backdrop-filter: blur(10px); font-size: 0.9em;
+            `;
+            notification.style.background = type === 'success' 
+                ? 'linear-gradient(45deg, #28a745, #20c997)' 
+                : 'linear-gradient(45deg, #dc3545, #ff6b6b)';
+            notification.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}" style="margin-right: 8px;"></i>${message}`;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-8px); }
+                50% { transform: translateX(8px); }
+                75% { transform: translateX(-4px); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        window.onload = function() {
+            const dropdowns = ['laxven', 'telpro', 'medha'];
+            dropdowns.forEach(d => {
+                const element = document.getElementById(`dropdown-${d}`);
+                if (element) element.classList.remove('active');
+                const tab = document.getElementById(`tab-${d}`);
+                if (tab) tab.classList.remove('active');
+            });
+            document.getElementById('welcomeMessage').style.display = 'block';
+        };
+
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('mouseenter', function() {
+                const icon = this.querySelector('.tab-icon i');
+                if (icon) {
+                    icon.style.transform = 'scale(1.2) rotate(5deg)';
+                    icon.style.transition = 'transform 0.3s';
+                }
+            });
+            tab.addEventListener('mouseleave', function() {
+                const icon = this.querySelector('.tab-icon i');
+                if (icon) icon.style.transform = 'scale(1) rotate(0deg)';
+            });
+        });
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                const ripple = document.createElement('span');
+                ripple.style.cssText = `
+                    position: absolute; background: rgba(255,255,255,0.5); border-radius: 50%;
+                    transform: scale(0); animation: ripple 0.6s linear; pointer-events: none;
+                `;
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+                ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+                this.style.position = 'relative';
+                this.style.overflow = 'hidden';
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+
+        const rippleStyle = document.createElement('style');
+        rippleStyle.textContent = `@keyframes ripple { to { transform: scale(4); opacity: 0; } }`;
+        document.head.appendChild(rippleStyle);
+    </script>
 </body>
 </html>

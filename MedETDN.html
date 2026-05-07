@@ -1,0 +1,2967 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Railway Speed Profile – MEDHA Data Format</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
+
+<style>
+body { 
+    font-family: Arial, sans-serif; 
+    background:#f4f6f8; 
+    margin:20px;
+    padding: 0;
+}
+.container {
+    max-width: 1800px;
+    margin: 0 auto;
+}
+.controls { 
+    background:#fff; 
+    padding:15px; 
+    border-radius:6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+.control-section {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+.control-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+label { 
+    font-weight:bold; 
+    margin-right:6px;
+    font-size: 14px;
+    display: inline-block;
+    min-width: 120px;
+}
+input, select, button { 
+    margin-right:10px; 
+    padding:6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+.small-input {
+    width: 100px;
+}
+.medium-input {
+    width: 150px;
+}
+button {
+    background: #0066cc;
+    color: white;
+    border: none;
+    cursor: pointer;
+    padding: 8px 16px;
+    font-weight: bold;
+}
+button:hover {
+    background: #0055aa;
+}
+.btn-secondary {
+    background: #6c757d;
+}
+.btn-secondary:hover {
+    background: #5a6268;
+}
+.btn-success {
+    background: #28a745;
+}
+.btn-success:hover {
+    background: #218838;
+}
+
+.chart-container {
+    background: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    height: 500px;
+    position: relative;
+}
+
+.zoom-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    display: flex;
+    gap: 5px;
+}
+
+.zoom-btn {
+    background: rgba(255,255,255,0.9);
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #333;
+    font-weight: normal;
+}
+
+.zoom-btn:hover {
+    background: #f0f0f0;
+}
+
+table { 
+    width:100%; 
+    border-collapse:collapse; 
+    background:#fff; 
+    margin-top:20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    font-size: 12px;
+}
+th, td { 
+    border:1px solid #ccc; 
+    padding:6px; 
+    text-align:center;
+    font-size: 12px;
+}
+th { 
+    background:#e8f0fe;
+    font-weight: bold;
+}
+.details-table th {
+    background: #e8f0fe;
+}
+.details-table td {
+    text-align: left;
+    padding-left: 15px;
+}
+.stop-row { 
+    background-color: #ffeaea; 
+}
+.bft-row {
+    background-color: #e8f8f0;
+}
+.bpt-row {
+    background-color: #fff8e8;
+}
+.psr-violation-row {
+    background-color: #fff3cd;
+}
+.tsr-violation-row {
+    background-color: #f8d7da;
+}
+.psr-compliance-row {
+    background-color: #d4edda;
+}
+.tsr-compliance-row {
+    background-color: #d4edda;
+}
+
+.footer { 
+    font-size:11px; 
+    text-align:right; 
+    margin-top:10px;
+    color: #666;
+}
+
+.signature-area {
+    margin-top: 20px;
+    padding: 10px;
+    border-top: 2px dashed #666;
+    text-align: right;
+    font-size: 12px;
+}
+
+.details-container {
+    background: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+.details-container h3 {
+    margin-top: 0;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.train-type-container {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.train-type-option {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.train-type-option input[type="radio"] {
+    margin-right: 5px;
+}
+
+.action-buttons {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.action-buttons button {
+    margin: 0 5px;
+}
+
+.report-section {
+    background: #fff;
+    padding: 12px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 15px;
+}
+
+.report-section h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #0066cc;
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+@media print {
+    body { 
+        font-family: Arial, sans-serif; 
+        margin: 0;
+        padding: 0;
+        font-size: 8pt;
+        background: white;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .container {
+        max-width: 100%;
+        padding: 0.1cm;
+        margin: 0;
+    }
+    .controls, .action-buttons, .btn-secondary, .btn-success, 
+    button, .control-section, #controlsSection, #actionButtons, .zoom-controls {
+        display: none !important;
+    }
+    
+    h2 {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    .details-container {
+        margin: 0 0 0.05cm 0;
+        padding: 0.05cm;
+        box-shadow: none;
+        border: 1px solid #ccc;
+        page-break-after: avoid;
+        break-inside: avoid;
+    }
+    
+    .chart-container {
+        page-break-inside: avoid;
+        height: 350px !important;
+        margin: 0.05cm 0;
+        padding: 0.05cm;
+        box-shadow: none;
+        border: 1px solid #ccc;
+        break-inside: avoid;
+    }
+    
+    .report-section:first-of-type {
+        margin-top: 0;
+        break-inside: avoid;
+        page-break-before: avoid;
+    }
+    
+    .chart-container img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain;
+    }
+    
+    .report-section {
+        page-break-inside: avoid;
+        margin-bottom: 0.1cm;
+        padding: 0.1cm;
+        box-shadow: none;
+        border: 1px solid #ddd;
+        break-inside: avoid;
+    }
+    
+    table { 
+        page-break-inside: avoid;
+        font-size: 7pt;
+        margin: 0.05cm 0;
+        box-shadow: none;
+        border: 1px solid #999;
+    }
+    th, td { 
+        padding: 0.05cm 0.08cm;
+        font-size: 7pt;
+    }
+    h2, h3, h4 {
+        page-break-after: avoid;
+        margin: 0.05cm 0 0.03cm 0;
+    }
+    h2 {
+        font-size: 14pt;
+    }
+    h3 {
+        font-size: 11pt;
+        margin-top: 0.05cm;
+    }
+    .footer {
+        margin-top: 0.1cm;
+        font-size: 6pt;
+    }
+    .signature-area {
+        margin-top: 0.1cm;
+        padding: 0.05cm;
+        font-size: 8pt;
+        page-break-inside: avoid;
+    }
+    .details-table td {
+        padding: 0.03cm 0.05cm;
+        font-size: 7pt;
+    }
+    @page {
+        size: A4 landscape;
+        margin: 0.2cm;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>🚆 Railway Speed Profile Analysis System - MEDHA Format</h2>
+
+    <div class="controls" id="controlsSection">
+        <div class="control-section">
+            <h4>📁 File Upload</h4>
+            <label>MEDHA Text File:</label><input type="file" id="medhaFile" accept=".txt" />
+            
+            <div style="margin-top: 10px;">
+                <label>TSR Excel:</label>
+                <div style="display: inline-block;">
+                    <input type="file" id="tsrFile" accept=".xlsx,.xls" style="display: none;" />
+                    <button type="button" onclick="document.getElementById('tsrFile').click();" class="btn-secondary" style="margin-right: 10px;">Choose TSR File</button>
+                    <span id="tsrFileName" style="font-size: 12px; color: #666;">No file chosen</span>
+                    <a href="https://drive.google.com/drive/folders/1q_UnONqVEDPlBNGs1kOBqygdo8nu_QMf?usp=sharing" target="_blank" style="margin-left: 15px; color: #0066cc; text-decoration: none;">📁 Open TSR Folder</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="control-section">
+            <h4>🚂 Train Details</h4>
+            <label>Train No:</label><input type="text" id="trainNo" class="small-input" placeholder="12345" oninput="autoDetectTrainType()" /><br><br>
+            <label>Train Load:</label><input type="text" id="trainLoad" class="medium-input" placeholder="1200T" /><br><br>
+            
+            <div class="train-type-container">
+                <label>Train Type:</label>
+                <div class="train-type-option">
+                    <input type="radio" id="trainTypeCoaching" name="trainType" value="coaching" checked>
+                    <label for="trainTypeCoaching" style="min-width:auto; font-weight:normal;">Coaching</label>
+                </div>
+                <div class="train-type-option">
+                    <input type="radio" id="trainTypeGoods" name="trainType" value="goods">
+                    <label for="trainTypeGoods" style="min-width:auto; font-weight:normal;">Goods</label>
+                </div>
+            </div><br>
+            
+            <label>ALP Name:</label><input type="text" id="alpName" class="medium-input" placeholder="Enter ALP Name" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <label>LP Name:</label><input type="text" id="lpName" class="medium-input" placeholder="Enter LP Name" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <label>CLI Name:</label><input type="text" id="cliName" class="medium-input" placeholder="Enter CLI Name" />
+            <label>Loco No:</label><input type="text" id="locoNo" class="small-input" placeholder="12345" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br><br>
+            <label>Train Date:</label><input type="date" id="trainDate" /><br><br>
+            <label>From Stn:</label><select id="start"></select>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <label>To Stn:</label><select id="end"></select>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <label>MPS:</label><input type="number" id="mps" class="small-input" placeholder="110" />
+        </div>
+        
+        <div class="control-section">
+            <h4>🧭 Direction</h4>
+            <label>Direction:</label>
+            <select id="dir"><option>UP</option><option>DOWN</option></select>
+            
+            <button onclick="process()">🚀 Process Data</button>
+        </div>
+    </div>
+
+    <div class="action-buttons" id="actionButtons">
+        <button onclick="downloadReport()" class="btn-success">📥 Download Report</button>
+        <button onclick="printReport()" class="btn-secondary">🖨️ Print Report</button>
+    </div>
+
+    <!-- This is the main report content that will be included in download/print -->
+    <div id="reportContent">
+        <!-- Train Details Summary -->
+        <div class="details-container" style="margin-bottom: 5px;">
+            <h3 style="margin-bottom: 5px;">📊 Train Details Summary</h3>
+            <table class="details-table" style="margin-top:0; width:100%; table-layout: fixed;">
+                <thead>
+                    <tr>
+                        <th style="width:15%">Parameter</th>
+                        <th style="width:35%">Value</th>
+                        <th style="width:15%">Parameter</th>
+                        <th style="width:35%">Value</th>
+                    </tr>
+                </thead>
+                <tbody id="trainDetailsTable">
+                    <tr>
+                        <td>Train No / Loco No</td><td id="detTrainNoLoco">-</td>
+                        <td>Train Load</td><td id="detTrainLoad">-</td>
+                    </tr>
+                    <tr>
+                        <td>ALP Name</td><td id="detALPName">-</td>
+                        <td>LP Name</td><td id="detLPName">-</td>
+                    </tr>
+                    <tr>
+                        <td>CLI Name</td><td id="detCLIName">-</td>
+                        <td>Train Date</td><td id="detTrainDate">-</td>
+                    </tr>
+                    <tr>
+                        <td>Direction</td><td id="detDirection">-</td>
+                        <td>Train Type</td><td id="detTrainType">-</td>
+                    </tr>
+                    <tr>
+                        <td>From Station</td><td id="detFromStn">-</td>
+                        <td>To Station</td><td id="detToStn">-</td>
+                    </tr>
+                    <tr>
+                        <td>MPS</td><td id="detMPS">-</td>
+                        <td>BFT/BPT</td><td id="detBFTBPT">-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Chart container with zoom controls -->
+        <div class="report-section" style="margin-top: 0;">
+            <h3 style="margin-bottom: 5px;">📈 Speed Profile Chart</h3>
+            <div class="chart-container" id="chartContainer" style="height: 500px;">
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="resetZoom()">Reset Zoom</button>
+                    <button class="zoom-btn" onclick="zoomIn()">🔍+</button>
+                    <button class="zoom-btn" onclick="zoomOut()">🔍-</button>
+                    <button class="zoom-btn" onclick="panLeft()">←</button>
+                    <button class="zoom-btn" onclick="panRight()">→</button>
+                </div>
+                <canvas id="chart"></canvas>
+            </div>
+        </div>
+        <!-- BFT/BPT Analysis -->
+        <div class="report-section" style="margin-bottom: 10px;">
+            <h3>🔍 BFT/BPT Analysis</h3>
+            <div style="overflow-x: auto;">
+                <table style="margin-top:0; font-size: 10px;">
+                    <thead>
+                        <tr>
+                            <th>Test Type</th>
+                            <th>Status</th>
+                            <th>Speed Drop Range</th>
+                            <th>Drop KM</th>
+                            <th>Recovery KM</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bftBptTable">
+                        <tr><td colspan="6" style="text-align:center; color:#666;">No data processed yet</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Stop Analysis -->
+        <div class="report-section">
+            <h3>🛑 Train Stop Analysis</h3>
+            <div style="overflow-x: auto;">
+                <table style="margin-top:0; font-size: 10px;">
+                    <thead>
+                        <tr>
+                            <th>Station</th>
+                            <th>Stop KM</th>
+                            <th>Dur (sec)</th>
+                            <th>2500m</th>
+                            <th>2000m</th>
+                            <th>1500m</th>
+                            <th>1000m</th>
+                            <th>500m</th>
+                            <th>250m</th>
+                            <th>110m</th>
+                            <th>20m</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stopTable">
+                        <tr><td colspan="11" style="text-align:center; color:#666;">No data processed yet</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PSR Overspeed Summary -->
+        <div class="report-section">
+            <h3>⚠️ PSR Overspeed Summary</h3>
+            <div style="overflow-x: auto;">
+                <table style="margin-top:0; font-size: 10px;">
+                    <thead>
+                        <tr>
+                            <th>From KM</th>
+                            <th>To KM</th>
+                            <th>PSR Limit</th>
+                            <th>Actual Speed</th>
+                            <th>Max Excess</th>
+                            <th>Remark</th>
+                        </tr>
+                    </thead>
+                    <tbody id="overTable">
+                        <tr><td colspan="6" style="text-align:center; color:#666;">No data processed yet</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PSR Compliance Near Zone -->
+        <div class="report-section" id="psrNearComplianceSection" style="display: none;">
+            <h3>🟢 PSR Compliance Near Violation Zones (Buffer Areas)</h3>
+            <div style="overflow-x: auto;">
+                <table style="margin-top:0; font-size: 10px;">
+                    <thead>
+                        <tr>
+                            <th>From KM</th>
+                            <th>To KM</th>
+                            <th>Related Violation Zone</th>
+                            <th>PSR Limit</th>
+                            <th>Actual Speed</th>
+                            <th>Distance from Zone</th>
+                        </tr>
+                    </thead>
+                    <tbody id="psrNearComplianceTable">
+                        <tr><td colspan="6" style="text-align:center; color:#666;">No compliant sections found near violation zones</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TSR Overspeed Summary -->
+        <div class="report-section">
+            <h3>⚠️ TSR Overspeed Summary</h3>
+            <div style="overflow-x: auto;">
+                <table style="margin-top:0; font-size: 10px;">
+                    <thead>
+                        <tr>
+                            <th>From KM</th>
+                            <th>To KM</th>
+                            <th>TSR Limit</th>
+                            <th>Actual Speed</th>
+                            <th>Max Excess</th>
+                            <th>TSR Reason</th>
+                            <th>Remark</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tsrOverTable">
+                        <tr><td colspan="7" style="text-align:center; color:#666;">No data processed yet</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TSR Compliance Near Zone -->
+        <div class="report-section" id="tsrNearComplianceSection" style="display: none;">
+            <h3>🟢 TSR Compliance Near Violation Zones (Buffer Areas)</h3>
+            <div style="overflow-x: auto;">
+                <table style="margin-top:0; font-size: 10px;">
+                    <thead>
+                        <tr>
+                            <th>From KM</th>
+                            <th>To KM</th>
+                            <th>Related Violation Zone</th>
+                            <th>TSR Limit</th>
+                            <th>Actual Speed</th>
+                            <th>Distance from Zone</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tsrNearComplianceTable">
+                        <tr><td colspan="6" style="text-align:center; color:#666;">No compliant sections found near violation zones</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        
+
+        <!-- Signature Area -->
+       <!-- Signature Area - Fixed with correct ID -->
+       <div class="signature-area">
+    <p style="display: flex; align-items: center; justify-content: space-between;">
+        
+        <!-- Left side: Heart + Name together -->
+       <span style="display: inline-flex; align-items: center; gap: 4px;">
+    <span style="color: red;">❤️</span>
+    <span>A_M_R_U_T_A</span>
+    </span>
+
+        <!-- Right side: Signature -->
+        <span>
+            CLI Signature: _________________________ 
+            ( <span id="signatureCliName"></span> )
+        </span>
+    </p>
+
+    <div style="text-align: center; margin-top: 5px; font-size: 9px;">
+        Generated: <span id="reportDate"></span>
+    </div>
+</div>
+    </div>
+</div>
+
+<script>
+/* Declare global variables */
+let chart = null;
+let tsrZones = [];
+let tsrReasons = []; // Store TSR reasons separately
+let processedData = { kms: [], speeds: [], times: [] };
+let chartImageData = null; // Store chart image for print/download
+let mpsValue = 110; // Default MPS value
+let psrViolations = []; // Store PSR violations with compliance info
+let tsrViolations = []; // Store TSR violations with compliance info
+let psrComplianceMap = new Map(); // Map to store compliance sections for each PSR zone
+let tsrComplianceMap = new Map(); // Map to store compliance sections for each TSR zone
+
+// Add event listener for TSR file input
+document.getElementById('tsrFile').addEventListener('change', function(e) {
+    const fileName = e.target.files[0] ? e.target.files[0].name : 'No file chosen';
+    document.getElementById('tsrFileName').textContent = fileName;
+});
+
+/* ---------------- Train Type Detection ---------------- */
+function autoDetectTrainType() {
+    const trainNo = document.getElementById('trainNo').value.trim();
+    
+    if (!trainNo) return;
+    
+    // Check if train number contains only digits (coaching) or contains letters (goods)
+    const isAllDigits = /^\d+$/.test(trainNo);
+    
+    if (isAllDigits) {
+        // All digits - coaching train
+        document.getElementById('trainTypeCoaching').checked = true;
+    } else {
+        // Contains letters - goods train
+        document.getElementById('trainTypeGoods').checked = true;
+    }
+}
+
+/* ---------------- STATION DATA ---------------- */
+const stationData = {
+    "BSL": { UP: 444.201, DOWN: 444.12 },
+    "DSK": { UP: 451.424, DOWN: 450.442 },
+    "SAV": { UP: 460.012, DOWN: 459.375 },
+    "NB": { UP: 468.597, DOWN: 467.945 },
+    "RV": { UP: 478.798, DOWN: 478.11 },
+    "WGA": { UP: 488.629, DOWN: 487.963 },
+    "BAU": { UP: 499.114, DOWN: 498.524 },
+    "AGQ": { UP: 507.917, DOWN: 507.201 },
+    "CDI": { UP: 518.076, DOWN: 517.595 },
+    "NPNR": { UP: 525.254, DOWN: 524.69 },
+    "MWA": { UP: 531.05, DOWN: 530.26 },
+    "SXA": { UP: 536.695, DOWN: 536.6 },
+    "DGN": { UP: 544.797, DOWN: 544.081 },
+    "KDK": { UP: 553.241, DOWN: 551.746 },
+    "BMA": { UP: 556.519, DOWN: 555.939 },
+    "BRGJ": { UP: 562.48, DOWN: 562.264 },
+    "KNW": { UP: 567.838, DOWN: 567.268 }
+};
+
+/* Populate station options */
+Object.keys(stationData).forEach(s => {
+    document.getElementById("start").add(new Option(s, s));
+    document.getElementById("end").add(new Option(s, s));
+});
+
+/* ----------------- PSR Data ----------------- */
+const psrData = {
+    "BSL-KKNW": [
+        { startKM: 450.199, endKM: 451.257, speed: 100 },
+        { startKM: 476.037, endKM: 476.439, speed: 105 },
+        { startKM: 525.254, endKM: 525.601, speed: 65 }
+        
+    ],
+    "KNW-BSL": [
+        { startKM: 525.619, endKM: 525.254, speed: 65 },
+        { startKM: 479.577, endKM: 479.528, speed: 75 },
+        { startKM: 476.488, endKM: 476.178, speed: 105 },
+        { startKM: 451.316, endKM: 450.199, speed: 100 }
+        
+    ]
+};
+
+/* ----------------- Helper Functions ----------------- */
+function getLimit(km, dir) {
+    const key = dir === "UP" ? "KNW-BSL" : "BSL-KNW";
+    const list = psrData[key];
+
+    for (const p of list) {
+        if (dir === "UP") {
+            // For UP direction: startKM is larger, endKM is smaller
+            if (km <= p.startKM && km >= p.endKM) return p.speed;
+        } else {
+            // For DOWN direction: startKM is smaller, endKM is larger
+            if (km >= p.startKM && km <= p.endKM) return p.speed;
+        }
+    }
+    return null;
+}
+
+function getTSRLimit(km, dir) {
+    for (const zone of tsrZones) {
+        if (dir === "UP") {
+            // For UP direction: from is larger, to is smaller
+            if (km <= zone.from && km >= zone.to) {
+                return zone.speed;
+            }
+        } else {
+            // For DOWN direction: from is smaller, to is larger
+            if (km >= zone.from && km <= zone.to) {
+                return zone.speed;
+            }
+        }
+    }
+    return null;
+}
+
+function getTSRReason(km, dir) {
+    for (let i = 0; i < tsrZones.length; i++) {
+        const zone = tsrZones[i];
+        if (dir === "UP") {
+            if (km <= zone.from && km >= zone.to) {
+                return tsrReasons[i] || "No reason specified";
+            }
+        } else {
+            if (km >= zone.from && km <= zone.to) {
+                return tsrReasons[i] || "No reason specified";
+            }
+        }
+    }
+    return "-";
+}
+/* Function to generate PSR annotations with GREEN TRIANGLE (like speed caution board) */
+function getPSRAnnotations(kms, dirv) {
+    const annotations = {};
+    
+    if (!psrData) return annotations;
+    
+    const key = dirv === "UP" ? "KNW-BSL" : "BSL-KNW";
+    const allPSRs = psrData[key];
+    
+    if (!allPSRs) return annotations;
+    
+    allPSRs.forEach((zone, index) => {
+        let centerKM = (zone.startKM + zone.endKM) / 2;
+        
+        if (centerKM >= Math.min(...kms) && centerKM <= Math.max(...kms)) {
+            annotations[`psr-board-${index}`] = {
+                type: 'label',
+                xValue: centerKM,
+                yValue: zone.speed + 8,
+                content: zone.speed.toString(),
+                font: {
+                    size: 11,
+                    weight: '900',
+                    family: "'Arial Black', sans-serif"
+                },
+                color: '#ffffff',
+                backgroundColor: '#2E7D32',  // Green like caution boards
+                borderColor: '#FFFF00',  // Yellow border for visibility
+                borderWidth: 2,
+                borderRadius: 2,
+                padding: {
+                    top: 5,
+                    bottom: 5,
+                    left: 10,
+                    right: 10
+                },
+                // Triangular pointer below
+                callout: {
+                    display: true,
+                    side: 4,
+                    start: 'center',
+                    color: '#2E7D32',
+                    borderColor: '#FFFF00',
+                    borderWidth: 1.5,
+                    margin: 3
+                },
+                shadowOffsetX: 2,
+                shadowOffsetY: 2,
+                shadowBlur: 3,
+                shadowColor: 'rgba(0,0,0,0.4)'
+            };
+        }
+    });
+    
+    return annotations;
+}
+
+/* Function to generate TSR annotations with RED TRIANGLE (like speed caution board) */
+function getTSRAnnotations(kms, dirv) {
+    const annotations = {};
+    
+    if (!tsrZones || tsrZones.length === 0) return annotations;
+    
+    tsrZones.forEach((zone, index) => {
+        let centerKM = (zone.from + zone.to) / 2;
+        
+        if (centerKM >= Math.min(...kms) && centerKM <= Math.max(...kms)) {
+            annotations[`tsr-board-${index}`] = {
+                type: 'label',
+                xValue: centerKM,
+                yValue: zone.speed + 8,
+                content: zone.speed.toString(),
+                font: {
+                    size: 11,
+                    weight: '900',
+                    family: "'Arial Black', sans-serif"
+                },
+                color: '#ffffff',
+                backgroundColor: '#C62828',  // Red like caution boards
+                borderColor: '#FFFF00',  // Yellow border for visibility
+                borderWidth: 2,
+                borderRadius: 2,
+                padding: {
+                    top: 5,
+                    bottom: 5,
+                    left: 10,
+                    right: 10
+                },
+                // Triangular pointer below
+                callout: {
+                    display: true,
+                    side: 4,
+                    start: 'center',
+                    color: '#C62828',
+                    borderColor: '#FFFF00',
+                    borderWidth: 1.5,
+                    margin: 3
+                },
+                shadowOffsetX: 2,
+                shadowOffsetY: 2,
+                shadowBlur: 3,
+                shadowColor: 'rgba(0,0,0,0.4)'
+            };
+        }
+    });
+    
+    return annotations;
+}
+function findNearestStation(km, dirv) {
+    let nearestStation = "";
+    let minDistance = Infinity;
+    
+    for (const [station, data] of Object.entries(stationData)) {
+        const stationKM = data[dirv];
+        const distance = Math.abs(stationKM - km);
+        if (distance < minDistance && distance < 2.0) {
+            minDistance = distance;
+            nearestStation = station;
+        }
+    }
+    
+    return nearestStation || "-";
+}
+
+function getSpeedAtDistanceBeforeStop(stopKM, kms, speeds, dirv, distanceMeters) {
+    const distanceKm = distanceMeters / 1000;
+    
+    let targetKM;
+    if (dirv === "UP") {
+        targetKM = stopKM + distanceKm; // For UP, before stop means higher KM
+    } else {
+        targetKM = stopKM - distanceKm; // For DOWN, before stop means lower KM
+    }
+    
+    let nearestIndex = -1;
+    let minDiff = Infinity;
+    
+    for (let i = 0; i < kms.length; i++) {
+        const diff = Math.abs(kms[i] - targetKM);
+        if (diff < minDiff) {
+            minDiff = diff;
+            nearestIndex = i;
+        }
+    }
+    
+    if (nearestIndex !== -1 && minDiff < 0.1) {
+        return speeds[nearestIndex].toFixed(1);
+    } else if (nearestIndex !== -1) {
+        return speeds[nearestIndex].toFixed(1);
+    }
+    
+    return "-";
+}
+
+/* Updated BFT function - corrected logic */
+function checkBFT(kms, speeds, startKM, dirv) {
+    const checkDistance = 2.0; // 500 meters
+    let checkStartKM, checkEndKM;
+    
+    if (dirv === "UP") {
+        checkStartKM = startKM; // Starting point
+        checkEndKM = startKM - checkDistance; // 500m ahead in UP direction (lower KM)
+    } else {
+        checkStartKM = startKM; // Starting point
+        checkEndKM = startKM + checkDistance; // 500m ahead in DOWN direction (higher KM)
+    }
+    
+    let inDropZone = false;
+    let dropStartKM = null;
+    let initialSpeed = null;
+    let minSpeed = null;
+    let maxSpeedInZone = null;
+    let bftDetected = false;
+    let speedDrop = 0;
+    
+    for (let i = 0; i < kms.length; i++) {
+        const km = kms[i];
+        const speed = speeds[i];
+        
+        // Check if current point is within 500m from start station
+        if (dirv === "UP" ? (km <= checkStartKM && km >= checkEndKM) : (km >= checkStartKM && km <= checkEndKM)) {
+            
+            // Start of BFT zone when speed is between 12-20 kmph
+            if (!inDropZone && speed >= 12 && speed <= 20) {
+                inDropZone = true;
+                dropStartKM = km;
+                initialSpeed = speed;
+                minSpeed = speed;
+                maxSpeedInZone = speed;
+                console.log(`BFT zone started at ${km.toFixed(3)} with speed ${speed.toFixed(1)} kmph`);
+            } 
+            // Continue monitoring if already in drop zone
+            else if (inDropZone) {
+                // Track min and max speeds in the zone
+                if (speed < minSpeed) minSpeed = speed;
+                if (speed > maxSpeedInZone) maxSpeedInZone = speed;
+                
+                // Calculate current speed drop from initial speed
+                const currentDrop = initialSpeed - speed;
+                
+                // Check if we've achieved at least 4 kmph drop
+                if (currentDrop >= 5) {
+                    bftDetected = true;
+                    speedDrop = currentDrop;
+                    
+                    return {
+                        status: "BFT Done Properly",
+                        speedDropRange: `${initialSpeed.toFixed(1)} → ${speed.toFixed(1)} kmph (Drop: ${currentDrop.toFixed(1)} kmph)`,
+                        dropKM: dropStartKM.toFixed(3),
+                        recoveryKM: km.toFixed(3),
+                        remarks: `BFT completed: Speed dropped by ${currentDrop.toFixed(1)} kmph (required minimum 5 kmph)`
+                    };
+                }
+                
+                // Exit zone if speed goes above 20 kmph (train accelerating)
+                if (speed > 20) {
+                    // Check if we had any drop before exiting
+                    if (minSpeed !== null && (initialSpeed - minSpeed) >= 4) {
+                        speedDrop = initialSpeed - minSpeed;
+                        return {
+                            status: "BFT Done Properly",
+                            speedDropRange: `${initialSpeed.toFixed(1)} → ${minSpeed.toFixed(1)} kmph (Drop: ${speedDrop.toFixed(1)} kmph)`,
+                            dropKM: dropStartKM.toFixed(3),
+                            recoveryKM: km.toFixed(3),
+                            remarks: `BFT completed: Speed dropped by ${speedDrop.toFixed(1)} kmph before accelerating`
+                        };
+                    }
+                    
+                    inDropZone = false;
+                    console.log(`BFT zone exited at ${km.toFixed(3)} without required drop`);
+                }
+            }
+        }
+    }
+    
+    // If we're still in drop zone at the end of data
+    if (inDropZone && minSpeed !== null && initialSpeed !== null) {
+        const finalDrop = initialSpeed - minSpeed;
+        if (finalDrop >= 4) {
+            return {
+                status: "BFT Done Properly",
+                speedDropRange: `${initialSpeed.toFixed(1)} → ${minSpeed.toFixed(1)} kmph (Drop: ${finalDrop.toFixed(1)} kmph)`,
+                dropKM: dropStartKM.toFixed(3),
+                recoveryKM: kms[kms.length - 1].toFixed(3),
+                remarks: `BFT completed: Speed dropped by ${finalDrop.toFixed(1)} kmph (required minimum 4 kmph)`
+            };
+        }
+    }
+    
+    // No BFT detected with 4 kmph drop
+    if (initialSpeed !== null && minSpeed !== null) {
+        const actualDrop = initialSpeed - minSpeed;
+        return {
+            status: "BFT Not Done Properly",
+            speedDropRange: `${initialSpeed.toFixed(1)} → ${minSpeed.toFixed(1)} kmph (Drop: ${actualDrop.toFixed(1)} kmph)`,
+            dropKM: dropStartKM ? dropStartKM.toFixed(3) : "-",
+            recoveryKM: "-",
+            remarks: `BFT attempted but insufficient drop: Only ${actualDrop.toFixed(1)} kmph drop (requires ≥5 kmph)`
+        };
+    }
+    
+    return {
+        status: "BFT Not Done",
+        speedDropRange: "-",
+        dropKM: "-",
+        recoveryKM: "-",
+        remarks: "No BFT pattern detected: Train speed not in 12-20 kmph range within 500m from start"
+    };
+}
+
+/* Updated BPT function - corrected logic for both train types */
+function checkBPT(kms, speeds, startKM, dirv, trainType) {
+    const checkDistance = 20; // Check within 20km from start station
+    let checkStartKM, checkEndKM;
+    
+    if (dirv === "UP") {
+        checkStartKM = startKM;
+        checkEndKM = startKM - checkDistance;
+    } else {
+        checkStartKM = startKM;
+        checkEndKM = startKM + checkDistance;
+    }
+    
+    // Define speed ranges based on train type
+    let targetSpeedMin, targetSpeedMax;
+    
+    if (trainType === "coaching") {
+        targetSpeedMin = 60;
+        targetSpeedMax = 80;
+    } else { // goods
+        targetSpeedMin = 40;
+        targetSpeedMax = 60;
+    }
+    
+    console.log(`Checking BPT for ${trainType} train from station at KM: ${startKM}`);
+    console.log(`BPT zone from ${checkStartKM} to ${checkEndKM}`);
+    console.log(`Target speed range: ${targetSpeedMin}-${targetSpeedMax} kmph`);
+    
+    let inBptZone = false;
+    let dropStartKM = null;
+    let dropStartSpeed = null;
+    let dropStartIndex = -1;
+    let maxSpeedInZone = null;
+    
+    // Find where speed enters target range
+    for (let i = 0; i < kms.length; i++) {
+        const km = kms[i];
+        const speed = speeds[i];
+        
+        const inRange = (dirv === "UP") ? 
+            (km <= checkStartKM && km >= checkEndKM) : 
+            (km >= checkStartKM && km <= checkEndKM);
+        
+        if (inRange && speed >= targetSpeedMin && speed <= targetSpeedMax) {
+            inBptZone = true;
+            dropStartKM = km;
+            dropStartSpeed = speed;
+            dropStartIndex = i;
+            maxSpeedInZone = speed;
+            console.log(`BPT start detected at KM: ${km.toFixed(3)}, Speed: ${speed.toFixed(1)} kmph (within target range)`);
+            break;
+        }
+    }
+    
+    if (!inBptZone) {
+        console.log(`No BPT start detected: Train speed never reached ${targetSpeedMin}-${targetSpeedMax} kmph within 20km of start`);
+        return {
+            status: "BPT Not Done",
+            speedDropRange: "-",
+            dropKM: "-",
+            recoveryKM: "-",
+            remarks: `No BPT pattern detected: Speed never reached ${targetSpeedMin}-${targetSpeedMax} kmph within 20km from start`
+        };
+    }
+    
+    // Now look for speed dropping to 50% or less of max speed
+    let dropFoundKM = null;
+    let dropFoundSpeed = null;
+    let targetDropSpeed = null;
+    
+    for (let i = dropStartIndex + 1; i < kms.length; i++) {
+        const km = kms[i];
+        const speed = speeds[i];
+        
+        // Update max speed if speed increases
+        if (speed > maxSpeedInZone) {
+            maxSpeedInZone = speed;
+            console.log(`Max speed updated to ${speed.toFixed(1)} kmph at KM: ${km.toFixed(3)}`);
+        }
+        
+        // Calculate 50% of max speed
+        targetDropSpeed = maxSpeedInZone * 0.5;
+        
+        // Check if still within 20km range
+        const stillInRange = (dirv === "UP") ? 
+            (km <= checkStartKM && km >= checkEndKM) : 
+            (km >= checkStartKM && km <= checkEndKM);
+        
+        if (!stillInRange) {
+            console.log(`Exited BPT zone at KM: ${km.toFixed(3)} without reaching 50% drop`);
+            break;
+        }
+        
+        // Check if speed drops to ≤50% of max speed
+        if (speed <= targetDropSpeed) {
+            dropFoundKM = km;
+            dropFoundSpeed = speed;
+            console.log(`BPT drop detected at KM: ${km.toFixed(3)}, Speed: ${speed.toFixed(1)} kmph (≤50% of ${maxSpeedInZone.toFixed(1)} kmph)`);
+            break;
+        }
+    }
+    
+    if (dropFoundKM !== null) {
+        const dropPercentage = ((maxSpeedInZone - dropFoundSpeed) / maxSpeedInZone * 100).toFixed(0);
+        return {
+            status: "BPT Done Properly",
+            speedDropRange: `${maxSpeedInZone.toFixed(1)} → ${dropFoundSpeed.toFixed(1)} kmph (${dropPercentage}% drop)`,
+            dropKM: dropStartKM.toFixed(3),
+            recoveryKM: dropFoundKM.toFixed(3),
+            remarks: `BPT completed: Speed dropped from ${maxSpeedInZone.toFixed(1)} kmph to ${dropFoundSpeed.toFixed(1)} kmph (${dropPercentage}% reduction)`
+        };
+    } else {
+        // Find minimum speed reached in zone
+        let minSpeedInZone = Infinity;
+        for (let i = dropStartIndex + 1; i < kms.length; i++) {
+            const km = kms[i];
+            const speed = speeds[i];
+            
+            const stillInRange = (dirv === "UP") ? 
+                (km <= checkStartKM && km >= checkEndKM) : 
+                (km >= checkStartKM && km <= checkEndKM);
+            
+            if (!stillInRange) break;
+            if (speed < minSpeedInZone) minSpeedInZone = speed;
+        }
+        
+        if (minSpeedInZone < Infinity) {
+            const dropPercentage = ((maxSpeedInZone - minSpeedInZone) / maxSpeedInZone * 100).toFixed(0);
+            return {
+                status: "BPT Not Done Properly",
+                speedDropRange: `${maxSpeedInZone.toFixed(1)} → ${minSpeedInZone.toFixed(1)} kmph (${dropPercentage}% drop)`,
+                dropKM: dropStartKM.toFixed(3),
+                recoveryKM: "-",
+                remarks: `BPT attempted but insufficient drop: Only ${dropPercentage}% reduction (requires ≥50%)`
+            };
+        }
+    }
+    
+    return {
+        status: "BPT Not Done",
+        speedDropRange: "-",
+        dropKM: "-",
+        recoveryKM: "-",
+        remarks: `No BPT pattern detected within 20km from start`
+    };
+}
+
+/* Function to filter data between selected stations */
+function filterDataBetweenStations(kms, spd, times, dirv, startStation, endStation) {
+    const startKM = stationData[startStation][dirv];
+    const endKM = stationData[endStation][dirv];
+    
+    const filteredIndices = [];
+    const filteredKms = [];
+    const filteredSpd = [];
+    const filteredTimes = [];
+    
+    // Filter points between start and end stations (inclusive)
+    for (let i = 0; i < kms.length; i++) {
+        const km = kms[i];
+        
+        if (dirv === "UP") {
+            if (km <= startKM && km >= endKM) {
+                filteredIndices.push(i);
+                filteredKms.push(km);
+                filteredSpd.push(spd[i]);
+                filteredTimes.push(times[i]);
+            }
+        } else {
+            if (km >= startKM && km <= endKM) {
+                filteredIndices.push(i);
+                filteredKms.push(km);
+                filteredSpd.push(spd[i]);
+                filteredTimes.push(times[i]);
+            }
+        }
+    }
+    
+    return {
+        kms: filteredKms,
+        speeds: filteredSpd,
+        times: filteredTimes,
+        indices: filteredIndices
+    };
+}
+
+/* Zoom control functions */
+function resetZoom() {
+    if (chart) {
+        chart.resetZoom();
+    }
+}
+
+function zoomIn() {
+    if (chart) {
+        chart.zoom(1.2);
+    }
+}
+
+function zoomOut() {
+    if (chart) {
+        chart.zoom(0.8);
+    }
+}
+
+function panLeft() {
+    if (chart) {
+        chart.pan({x: -50, y: 0});
+    }
+}
+
+function panRight() {
+    if (chart) {
+        chart.pan({x: 50, y: 0});
+    }
+}
+
+/* ---------------- MEDHA SPECIFIC FUNCTIONS ---------------- */
+
+/**
+ * Parse MEDHA date string in dd/mm/yy format
+ */
+function parseMedhaDate(dateStr) {
+    if (!dateStr) return null;
+    
+    try {
+        // Handle dd/mm/yy format
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed in JS
+            let year = parseInt(parts[2], 10);
+            // Convert 2-digit year to 4-digit (assuming 2000+ for years < 100)
+            if (year < 100) {
+                year = 2000 + year;
+            }
+            return new Date(year, month, day);
+        }
+    } catch (e) {
+        console.error("Error parsing MEDHA date:", e);
+    }
+    return null;
+}
+
+/**
+ * Parse MEDHA time string in hh:mm:ss format
+ */
+function parseMedhaTime(timeStr) {
+    if (!timeStr) return null;
+    
+    try {
+        const parts = timeStr.split(':');
+        if (parts.length === 3) {
+            const hours = parseInt(parts[0], 10);
+            const minutes = parseInt(parts[1], 10);
+            const seconds = parseInt(parts[2], 10);
+            return { hours, minutes, seconds };
+        }
+    } catch (e) {
+        console.error("Error parsing MEDHA time:", e);
+    }
+    return null;
+}
+
+/**
+ * Combine date and time into a single Date object
+ */
+function combineDateTime(dateStr, timeStr) {
+    if (!dateStr || !timeStr) return null;
+    
+    try {
+        const dateParts = dateStr.split('/');
+        const timeParts = timeStr.split(':');
+        
+        if (dateParts.length === 3 && timeParts.length === 3) {
+            const day = parseInt(dateParts[0], 10);
+            const month = parseInt(dateParts[1], 10) - 1;
+            let year = parseInt(dateParts[2], 10);
+            if (year < 100) {
+                year = 2000 + year;
+            }
+            const hours = parseInt(timeParts[0], 10);
+            const minutes = parseInt(timeParts[1], 10);
+            const seconds = parseInt(timeParts[2], 10);
+            
+            return new Date(year, month, day, hours, minutes, seconds);
+        }
+    } catch (e) {
+        console.error("Error combining date/time:", e);
+    }
+    return null;
+}
+
+/**
+ * Parse MEDHA text file and extract start distance
+ */
+function parseMedhaFile(text) {
+    const lines = text.split('\n');
+    const dataRows = [];
+    
+    // Extract start distance from header
+    let startDist = null;
+    let startStationInfo = "";
+    
+    for (let line of lines) {
+        // Look for Start Dist in header
+        if (line.includes('Start Dist') || line.includes('Start Dist')) {
+            const match = line.match(/Start Dist\s*:\s*([0-9.]+)/i);
+            if (match && match[1]) {
+                startDist = parseFloat(match[1]);
+                console.log(`Found start distance: ${startDist}`);
+            }
+        }
+        
+        // Also look for Start Date to get date format reference
+        if (line.includes('Start Date') || line.includes('Start Date')) {
+            console.log(`Header line: ${line}`);
+        }
+    }
+    
+    // Process data lines - MEDHA format: Date | Time | Speed | Distance | Event
+    // Example: 06/03/26 | 10:45:32 | 000 | 0000 | START
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        // Skip empty lines, header lines, separator lines
+        if (line.length === 0 || 
+            line.includes('________') || 
+            line.includes('Date') && line.includes('Time') && line.includes('Dist') ||
+            line.includes('Driver ID') ||
+            line.includes('Medha Speed Time') ||
+            line.includes('Short Term Digital') ||
+            line.includes('Filename') ||
+            line.includes('Userfilename') ||
+            line.includes('Shedname') ||
+            line.includes('PC Software')) {
+            continue;
+        }
+        
+        // Split by pipe character
+        const parts = line.split('|').map(part => part.trim());
+        
+        // MEDHA data line should have at least 5 parts: date, time, speed, distance, event
+        if (parts.length >= 5) {
+            const dateStr = parts[0].trim();
+            const timeStr = parts[1].trim();
+            const speedStr = parts[2].trim();
+            const distStr = parts[3].trim();
+            const eventStr = parts[4].trim();
+            
+            // Validate date format (dd/mm/yy)
+            if (dateStr && dateStr.includes('/') && 
+                timeStr && timeStr.includes(':') && 
+                !isNaN(parseInt(speedStr)) && 
+                !isNaN(parseInt(distStr))) {
+                
+                const speed = parseInt(speedStr, 10);
+                const distance = parseInt(distStr, 10); // Distance in meters
+                
+                // Only include valid data (speed and distance should be numbers)
+                if (!isNaN(speed) && !isNaN(distance)) {
+                    dataRows.push({
+                        date: dateStr,
+                        time: timeStr,
+                        speed: speed,
+                        distance: distance,
+                        event: eventStr
+                    });
+                }
+            }
+        }
+    }
+    
+    return { dataRows, startDist };
+}
+
+/* ---------------- PROCESS ---------------- */
+function process() {
+    const trainNo = document.getElementById('trainNo').value;
+    const locoNo = document.getElementById('locoNo').value;
+    const trainLoad = document.getElementById('trainLoad').value;
+    const alpName = document.getElementById('alpName').value;
+    const lpName = document.getElementById('lpName').value;
+    const cliName = document.getElementById('cliName').value;
+    const trainDate = document.getElementById('trainDate').value;
+    mpsValue = parseFloat(document.getElementById('mps').value) || 110;
+    const dirv = document.getElementById('dir').value;
+    const st = document.getElementById('start').value;
+    const en = document.getElementById('end').value;
+    
+    const trainType = document.querySelector('input[name="trainType"]:checked').value;
+    
+    if (!trainNo || !lpName || !trainDate || !mpsValue || !st || !en) {
+        alert("Please fill all required train details");
+        return;
+    }
+    
+    const medhaFile = document.getElementById('medhaFile').files[0];
+    if (!medhaFile) return alert("Upload MEDHA text file");
+    
+    // Update ALL fields in the train details table
+    const trainNoLocoDisplay = locoNo ? `${trainNo} / ${locoNo}` : trainNo;
+    document.getElementById('detTrainNoLoco').textContent = trainNoLocoDisplay;
+    document.getElementById('detTrainLoad').textContent = trainLoad || "-";
+    document.getElementById('detALPName').textContent = alpName || "-";
+    document.getElementById('detLPName').textContent = lpName;
+    document.getElementById('detCLIName').textContent = cliName || "-";
+    document.getElementById('detTrainDate').textContent = trainDate;
+    document.getElementById('detTrainType').textContent = trainType === "coaching" ? "Coaching" : "Goods";
+    document.getElementById('detFromStn').textContent = st;
+    document.getElementById('detToStn').textContent = en;
+    document.getElementById('detDirection').textContent = dirv;
+    document.getElementById('detMPS').textContent = mpsValue;
+    
+    // Set CLI name in signature area
+    document.getElementById('signatureCliName').textContent = cliName || "______________";
+    
+    // Set report date
+    const today = new Date();
+    document.getElementById('reportDate').textContent = today.toLocaleDateString('en-IN') + ' ' + today.toLocaleTimeString('en-IN');
+    
+    // Hide compliance sections initially
+    document.getElementById('psrNearComplianceSection').style.display = 'none';
+    document.getElementById('tsrNearComplianceSection').style.display = 'none';
+    
+    // Clear compliance maps
+    psrComplianceMap.clear();
+    tsrComplianceMap.clear();
+    
+    readTSR(() => readMedhaData(medhaFile, trainNo, trainLoad, alpName, lpName, trainDate, mpsValue, dirv, st, en, trainType, cliName));
+}
+
+/* ---------------- TSR READ ---------------- */
+function readTSR(cb) {
+    tsrZones = [];
+    tsrReasons = [];
+    const tsrFile = document.getElementById('tsrFile').files[0];
+    if (!tsrFile) return cb();
+    
+    const r = new FileReader();
+    r.onload = e => {
+        try {
+            const wb = XLSX.read(e.target.result, { type: "binary" });
+            const sheetData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+            
+            // Check if there's a header row
+            let startRow = 0;
+            if (sheetData.length > 0 && isNaN(sheetData[0][0])) {
+                startRow = 1; // Skip header row
+            }
+            
+            for (let i = startRow; i < sheetData.length; i++) {
+                const row = sheetData[i];
+                if (row && row.length >= 3 && !isNaN(parseFloat(row[0])) && !isNaN(parseFloat(row[1])) && !isNaN(parseFloat(row[2]))) {
+                    tsrZones.push({ 
+                        from: parseFloat(row[0]), 
+                        to: parseFloat(row[1]), 
+                        speed: parseFloat(row[2]) 
+                    });
+                    // Store TSR reason from column D (index 3) or empty string if not present
+                    tsrReasons.push(row[3] ? row[3].toString() : "No reason specified");
+                }
+            }
+        } catch (error) {
+            console.error("Error reading TSR file:", error);
+        }
+        cb();
+    };
+    r.readAsBinaryString(tsrFile);
+}
+
+/* ---------------- MEDHA DATA READ ---------------- */
+function readMedhaData(file, trainNo, trainLoad, alpName, lpName, trainDate, mps, dirv, st, en, trainType, cliName) {
+    const r = new FileReader();
+    r.onload = e => {
+        try {
+            const fileContent = e.target.result;
+            const { dataRows, startDist } = parseMedhaFile(fileContent);
+            
+            if (dataRows.length === 0) {
+                alert("No valid data found in the MEDHA file. Expected format: Date | Time | Speed | Distance | Event");
+                return;
+            }
+
+            console.log(`Loaded ${dataRows.length} MEDHA data rows`);
+            console.log("First few rows:", dataRows.slice(0, 5));
+
+            // Get starting station reference KM
+            const startRefKM = stationData[st][dirv];
+            console.log(`Start station: ${st} at KM: ${startRefKM}, Direction: ${dirv}`);
+            console.log(`Start distance from file: ${startDist}`);
+
+            // Calculate cumulative KM positions using the formula:
+            // For DOWN: startRefKM + (cumulative distance from file / 1000)
+            // For UP: startRefKM - (cumulative distance from file / 1000)
+            
+            const kms = [];
+            const spd = [];
+            const times = []; // Store combined date-time objects for stop detection
+            
+            // Initialize with starting point
+            let cumulativeDist = 0;
+            let prevDistance = 0;
+            let lastValidKM = startRefKM;
+            
+            for (let i = 0; i < dataRows.length; i++) {
+                const row = dataRows[i];
+                
+                // Handle distance - it's the distance traveled in this segment
+                // For MEDHA, the distance column is the segment distance in meters
+                const segmentDist = row.distance;
+                
+                // Validate segment distance - if it's too large, it might be an anomaly
+                if (segmentDist > 0 && segmentDist < 1000) { // Sanity check: max 1km per segment
+                    cumulativeDist += segmentDist;
+                } else if (segmentDist === 0) {
+                    // Zero distance is fine (stationary)
+                    // No change in cumulative distance
+                } else {
+                    console.log(`Suspicious segment distance: ${segmentDist} at row ${i}`);
+                }
+                
+                // Calculate KM based on direction
+                let currentKM;
+                if (dirv === "DOWN") {
+                    currentKM = startRefKM + (cumulativeDist / 1000);
+                } else { // UP
+                    currentKM = startRefKM - (cumulativeDist / 1000);
+                }
+                
+                // Validate KM - should be reasonable
+                if (!isNaN(currentKM) && isFinite(currentKM)) {
+                    kms.push(parseFloat(currentKM.toFixed(3)));
+                    spd.push(row.speed);
+                    lastValidKM = currentKM;
+                    
+                    // Create combined date-time object for stop detection
+                    const dateTime = combineDateTime(row.date, row.time);
+                    times.push(dateTime || `${row.date} ${row.time}`);
+                } else {
+                    console.log(`Invalid KM at row ${i}: ${currentKM}`);
+                }
+            }
+
+            console.log(`Generated ${kms.length} KM positions`);
+            console.log(`KM range: ${Math.min(...kms)} to ${Math.max(...kms)}`);
+
+            // Filter data between selected stations
+            const filteredData = filterDataBetweenStations(kms, spd, times, dirv, st, en);
+            
+            if (filteredData.kms.length === 0) {
+                alert("No data points found between selected stations");
+                return;
+            }
+            
+            console.log(`Filtered data: ${filteredData.kms.length} points between ${st} and ${en}`);
+            
+            processedData = { 
+                kms: filteredData.kms, 
+                speeds: filteredData.speeds, 
+                times: filteredData.times, 
+                dirv, 
+                startStation: st, 
+                endStation: en, 
+                trainType 
+            };
+            
+            plotStations(filteredData.kms, filteredData.speeds, dirv, st, en);
+            detectStops(filteredData.kms, filteredData.speeds, filteredData.times, dirv, st, en);
+            overspeedSummary(filteredData.kms, filteredData.speeds, dirv, st, en);
+            tsrOverspeedSummary(filteredData.kms, filteredData.speeds, dirv, st, en);
+            
+            // Only check near zone compliance if there are violations
+            if (psrViolations.length > 0) {
+                psrNearZoneCompliance(filteredData.kms, filteredData.speeds, dirv, st, en, 2.0);
+            }
+            
+            if (tsrViolations.length > 0) {
+                tsrNearZoneCompliance(filteredData.kms, filteredData.speeds, dirv, st, en, 2.0);
+            }
+            
+            // Update PSR violation table with remarks
+            updatePsrViolationTable();
+            
+            // Update TSR violation table with remarks
+            updateTsrViolationTable();
+            
+            const bftResult = checkBFT(filteredData.kms, filteredData.speeds, stationData[st][dirv], dirv);
+            const bptResult = checkBPT(filteredData.kms, filteredData.speeds, stationData[st][dirv], dirv, trainType);
+            
+            document.getElementById('detBFTBPT').textContent = `${bftResult.status}/${bptResult.status}`;
+            
+            updateBftBptTable(bftResult, bptResult, trainType);
+            
+        } catch (error) {
+            console.error("Error reading MEDHA file:", error);
+            alert("Error processing MEDHA file. Please check the console for details.");
+        }
+    };
+    r.readAsText(file);
+}
+
+/* ---------------- STOP DETECTION ---------------- */
+function detectStops(kms, spd, times, dirv, startStation, endStation) {
+    const tb = document.getElementById("stopTable");
+    tb.innerHTML = "";
+
+    if (kms.length === 0) {
+        tb.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#666;">No data available</td></tr>`;
+        return;
+    }
+
+    // Helper function to get Date object from time entry
+    const getDateFromTimeEntry = (timeEntry) => {
+        if (timeEntry === null || timeEntry === undefined) return null;
+        
+        if (timeEntry instanceof Date) {
+            return timeEntry;
+        }
+        else if (typeof timeEntry === 'string') {
+            try {
+                // Try to parse string format "dd/mm/yy hh:mm:ss"
+                const parts = timeEntry.split(' ');
+                if (parts.length === 2) {
+                    const dateParts = parts[0].split('/');
+                    const timeParts = parts[1].split(':');
+                    
+                    if (dateParts.length === 3 && timeParts.length === 3) {
+                        const day = parseInt(dateParts[0], 10);
+                        const month = parseInt(dateParts[1], 10) - 1;
+                        let year = parseInt(dateParts[2], 10);
+                        if (year < 100) {
+                            year = 2000 + year;
+                        }
+                        const hours = parseInt(timeParts[0], 10);
+                        const minutes = parseInt(timeParts[1], 10);
+                        const seconds = parseInt(timeParts[2], 10);
+                        
+                        return new Date(year, month, day, hours, minutes, seconds);
+                    }
+                }
+            } catch (e) {
+                console.error("Error parsing date string:", e);
+            }
+        }
+        return null;
+    };
+
+    const stops = [];
+    let inStop = false;
+    let stopStartIdx = -1;
+    let stopStartTime = null;
+    let stopStartKM = null;
+
+    // For MEDHA data, use continuous detection with tolerance for speed fluctuations
+    function detectStopsContinuousData() {
+        for (let i = 0; i < spd.length; i++) {
+            // Consider speeds below 0.5 kmph as stopped (accounting for rounding)
+            const isStopped = spd[i] < 0.5;
+            
+            if (isStopped && !inStop) {
+                // Start of a stop
+                inStop = true;
+                stopStartIdx = i;
+                stopStartTime = times[i];
+                stopStartKM = kms[i];
+                console.log(`Stop started at index ${i}, KM: ${stopStartKM}, speed: ${spd[i]}`);
+            } 
+            else if (!isStopped && inStop) {
+                // End of stop - train starts moving
+                finalizeStop(i);
+            }
+        }
+
+        // Handle case where stop continues to end of data
+        if (inStop && stopStartIdx !== -1) {
+            finalizeStop(spd.length - 1);
+        }
+    }
+
+    function finalizeStop(stopEndIdx) {
+        if (stopStartIdx === -1) return;
+        
+        // Calculate duration
+        let duration = 0;
+        
+        try {
+            const startDate = getDateFromTimeEntry(stopStartTime);
+            const endDate = getDateFromTimeEntry(times[stopEndIdx]);
+            
+            if (startDate && endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+                duration = Math.round((endDate - startDate) / 1000);
+                
+                // Handle negative duration (possible day change)
+                if (duration < 0) {
+                    duration = Math.round((endDate - startDate + 24*60*60*1000) / 1000);
+                }
+                
+                // Only count as stop if duration >= 10 seconds (avoid false detections)
+                if (duration < 10) {
+                    console.log(`Ignoring short duration ${duration}s at KM ${stopStartKM}`);
+                    inStop = false;
+                    stopStartIdx = -1;
+                    return;
+                }
+                
+                console.log(`Stop ended at index ${stopEndIdx}, duration: ${duration} seconds`);
+                
+                // Find nearest station for this stop
+                const nearestStation = findNearestStation(stopStartKM, dirv);
+                
+                stops.push({
+                    nearestStation: nearestStation,
+                    km: parseFloat(stopStartKM.toFixed(3)),
+                    duration: duration,
+                    stopStartIdx: stopStartIdx,
+                    stopEndIdx: stopEndIdx,
+                    startTime: stopStartTime,
+                    endTime: times[stopEndIdx]
+                });
+            } else {
+                console.error("Could not parse dates for stop duration calculation");
+            }
+        } catch (e) {
+            console.error("Error calculating duration:", e);
+        }
+        
+        inStop = false;
+        stopStartIdx = -1;
+    }
+
+    detectStopsContinuousData();
+
+    if (stops.length === 0) {
+        tb.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#666;">No stops detected</td></tr>`;
+    } else {
+        stops.forEach(stop => {
+            const speed2500m = getSpeedAtDistanceBeforeStop(stop.km, kms, spd, dirv, 2500);
+            const speed2000m = getSpeedAtDistanceBeforeStop(stop.km, kms, spd, dirv, 2000);
+            const speed1500m = getSpeedAtDistanceBeforeStop(stop.km, kms, spd, dirv, 1500);
+            const speed1000m = getSpeedAtDistanceBeforeStop(stop.km, kms, spd, dirv, 1000);
+            const speed500m = getSpeedAtDistanceBeforeStop(stop.km, kms, spd, dirv, 500);
+            const speed250m = getSpeedAtDistanceBeforeStop(stop.km, kms, spd, dirv, 250);
+            const speed110m = getSpeedAtDistanceBeforeStop(stop.km, kms, spd, dirv, 110);
+            const speed20m = getSpeedAtDistanceBeforeStop(stop.km, kms, spd, dirv, 20);
+            
+            // Format duration in minutes and seconds for display
+            const minutes = Math.floor(stop.duration / 60);
+            const seconds = stop.duration % 60;
+            const durationDisplay = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+            
+            const row = document.createElement("tr");
+            row.className = "stop-row";
+            row.innerHTML = `
+                <td>${stop.nearestStation}</td>
+                <td>${stop.km.toFixed(3)}</td>
+                <td>${stop.duration}</td>
+                <td>${speed2500m}</td>
+                <td>${speed2000m}</td>
+                <td>${speed1500m}</td>
+                <td>${speed1000m}</td>
+                <td>${speed500m}</td>
+                <td>${speed250m}</td>
+                <td>${speed110m}</td>
+                <td>${speed20m}</td>
+            `;
+            tb.appendChild(row);
+            
+            console.log(`STOP at ${stop.nearestStation} (KM: ${stop.km}) - Duration: ${durationDisplay} (${stop.duration} seconds)`);
+        });
+    }
+}
+
+/* Function to update BFT/BPT analysis table */
+function updateBftBptTable(bftResult, bptResult, trainType) {
+    const tb = document.getElementById("bftBptTable");
+    if (!tb) {
+        console.error("bftBptTable element not found");
+        return;
+    }
+    
+    tb.innerHTML = "";
+    
+    const typeRow = document.createElement("tr");
+    typeRow.innerHTML = `
+        <td colspan="6" style="background-color: #f0f0f0; font-weight: bold; text-align: center;">
+            Train Type: ${trainType === "coaching" ? "Coaching (Passenger)" : "Goods"} Train
+        </td>
+    `;
+    tb.appendChild(typeRow);
+    
+    const bftRow = document.createElement("tr");
+    bftRow.className = "bft-row";
+    bftRow.innerHTML = `
+        <td>BFT (Brake Feeler Test)</td>
+        <td>${bftResult.status}</td>
+        <td>${bftResult.speedDropRange}</td>
+        <td>${bftResult.dropKM}</td>
+        <td>${bftResult.recoveryKM}</td>
+        <td>${bftResult.remarks}</td>
+    `;
+    tb.appendChild(bftRow);
+    
+    const bptRow = document.createElement("tr");
+    bptRow.className = "bpt-row";
+    bptRow.innerHTML = `
+        <td>BPT (Brake Power Test)</td>
+        <td>${bptResult.status}</td>
+        <td>${bptResult.speedDropRange}</td>
+        <td>${bptResult.dropKM}</td>
+        <td>${bptResult.recoveryKM}</td>
+        <td>${bptResult.remarks}</td>
+    `;
+    tb.appendChild(bptRow);
+}
+
+/* Function to update PSR violation table with remarks */
+function updatePsrViolationTable() {
+    const tb = document.getElementById("overTable");
+    tb.innerHTML = "";
+    
+    if (psrViolations.length === 0) {
+        tb.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#666;">No PSR overspeed violations detected in selected segment</td></tr>`;
+        return;
+    }
+    
+    psrViolations.forEach(v => {
+        const row = document.createElement("tr");
+        row.className = "psr-violation-row";
+        
+        // Check if there are compliance sections for this zone
+        const zoneKey = `${v.startKM.toFixed(3)}-${v.endKM.toFixed(3)}`;
+        const complianceSections = psrComplianceMap.get(zoneKey) || [];
+        
+        let remark = "OVERSPEED";
+        if (complianceSections.length > 0) {
+            const sections = complianceSections.map(s => `${s.startKM}-${s.endKM}`).join(', ');
+            remark = `FOLLOWED (${sections})`;
+        }
+        
+        row.innerHTML = `
+            <td>${v.startKM.toFixed(3)}</td>
+            <td>${v.endKM.toFixed(3)}</td>
+            <td>${v.limit}</td>
+            <td>${v.actualSpeed.toFixed(1)}</td>
+            <td>${v.maxExcess.toFixed(1)}</td>
+            <td>${remark}</td>
+        `;
+        tb.appendChild(row);
+    });
+}
+
+/* Function to update TSR violation table with remarks */
+function updateTsrViolationTable() {
+    const tb = document.getElementById("tsrOverTable");
+    tb.innerHTML = "";
+    
+    if (tsrViolations.length === 0) {
+        tb.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#666;">No TSR overspeed violations detected in selected segment</td></tr>`;
+        return;
+    }
+    
+    tsrViolations.forEach(v => {
+        const row = document.createElement("tr");
+        row.className = "tsr-violation-row";
+        
+        // Get the TSR reason for this zone
+        const tsrIndex = tsrZones.findIndex(t => 
+            Math.abs(t.from - v.startKM) < 0.01 && 
+            Math.abs(t.to - v.endKM) < 0.01
+        );
+        const tsrReason = tsrIndex >= 0 ? (tsrReasons[tsrIndex] || "No reason specified") : "No reason specified";
+        
+        // Check if there are compliance sections for this zone
+        const zoneKey = `${v.startKM.toFixed(3)}-${v.endKM.toFixed(3)}`;
+        const complianceSections = tsrComplianceMap.get(zoneKey) || [];
+        
+        let remark = "OVERSPEED";
+        if (complianceSections.length > 0) {
+            const sections = complianceSections.map(s => `${s.startKM}-${s.endKM}`).join(', ');
+            remark = `FOLLOWED (${sections})`;
+        }
+        
+        row.innerHTML = `
+            <td>${v.startKM.toFixed(3)}</td>
+            <td>${v.endKM.toFixed(3)}</td>
+            <td>${v.limit}</td>
+            <td>${v.actualSpeed.toFixed(1)}</td>
+            <td>${v.maxExcess.toFixed(1)}</td>
+            <td>${tsrReason}</td>
+            <td>${remark}</td>
+        `;
+        tb.appendChild(row);
+    });
+}
+
+/* ---------------- PSR OVERSPEED SUMMARY ---------------- */
+/* ---------------- PSR OVERSPEED SUMMARY ---------------- */
+/* ---------------- PSR OVERSPEED SUMMARY ---------------- */
+function overspeedSummary(kms, spd, dirv, startStation, endStation) {
+    const startKM = stationData[startStation][dirv];
+    const endKM = stationData[endStation][dirv];
+    
+    const key = dirv === "UP" ? "KNW-BSL" : "BSL-KNW";
+    const allPSRs = psrData[key];
+    psrViolations = []; 
+    
+    console.log("=== PSR OVERSPEED ANALYSIS ===");
+    
+    allPSRs.forEach((p, index) => {
+        let overlaps = false;
+        if (dirv === "UP") {
+            if (p.startKM <= startKM && p.endKM >= endKM) overlaps = true;
+            else if (p.startKM <= startKM && p.startKM >= endKM) overlaps = true;
+            else if (p.endKM <= startKM && p.endKM >= endKM) overlaps = true;
+        } else {
+            if (p.startKM >= startKM && p.endKM <= endKM) overlaps = true;
+            else if (p.startKM >= startKM && p.startKM <= endKM) overlaps = true;
+            else if (p.endKM >= startKM && p.endKM <= endKM) overlaps = true;
+        }
+        if (!overlaps) return;
+        
+        // Collect points exactly in zone
+        const pointsInZone = [];
+        for (let i = 0; i < kms.length; i++) {
+            const inZone = (dirv === "UP") ? (kms[i] <= p.startKM && kms[i] >= p.endKM) : (kms[i] >= p.startKM && kms[i] <= p.endKM);
+            if (inZone) pointsInZone.push({ km: kms[i], speed: spd[i] });
+        }
+        
+        if (pointsInZone.length === 0) return;
+        
+        let maxSpeedInZone = 0, maxExcessInZone = 0;
+        pointsInZone.forEach(point => {
+            const excess = Math.max(0, point.speed - p.speed);
+            if (point.speed > maxSpeedInZone) maxSpeedInZone = point.speed;
+            if (excess > maxExcessInZone) maxExcessInZone = excess;
+        });
+        
+        // Step 1: If within tolerance, skip
+        if (maxExcessInZone <= 5) return;
+
+        // Step 2: OFFSET COMPLIANCE CHECK (Fix for KM mismatch)
+        let searchStart, searchEnd;
+        const offsetBuffer = 2.0; // Look 2km before and after
+        if (dirv === "UP") {
+            searchStart = p.startKM + offsetBuffer;
+            searchEnd = p.endKM - offsetBuffer;
+        } else {
+            searchStart = p.startKM - offsetBuffer;
+            searchEnd = p.endKM + offsetBuffer;
+        }
+        
+        let offsetComplianceFound = false;
+        let complianceStart = null;
+        
+        for (let i = 0; i < kms.length; i++) {
+            const km = kms[i];
+            const speed = spd[i];
+            const inSearch = (dirv === "UP") ? (km <= searchStart && km >= searchEnd) : (km >= searchStart && km <= searchEnd);
+            
+            // If speed is at or below limit (+5 tolerance)
+            if (inSearch && speed <= p.speed + 5) {
+                if (complianceStart === null) complianceStart = km;
+            } else {
+                if (complianceStart !== null) {
+                    const segmentLength = Math.abs(kms[i-1] - complianceStart);
+                    if (segmentLength >= 0.2) { // Sustained for at least 200 meters
+                        offsetComplianceFound = true;
+                        console.log(`  PSR ${p.startKM}-${p.endKM}: OFFSET COMPLIANCE at ${complianceStart.toFixed(3)} to ${kms[i-1].toFixed(3)} (${segmentLength.toFixed(3)}km)`);
+                        break;
+                    }
+                    complianceStart = null;
+                }
+            }
+        }
+        // Check last segment
+        if (!offsetComplianceFound && complianceStart !== null) {
+            const segmentLength = Math.abs(kms[kms.length-1] - complianceStart);
+            if (segmentLength >= 0.2) offsetComplianceFound = true;
+        }
+        
+        if (offsetComplianceFound) return; // Train followed restriction nearby, ignore exact zone mismatch
+
+        // Step 3: STRICT CHECKING (If no offset compliance, check approach/exit)
+        let approachStart = dirv === "UP" ? p.startKM + 2.0 : p.startKM - 2.0;
+        let approachEnd = p.startKM;
+        let exitStart = p.endKM;
+        let exitEnd = dirv === "UP" ? p.endKM - 2.0 : p.endKM + 2.0;
+        
+        let approachSpeeds = [], exitSpeeds = [];
+        for (let i = 0; i < kms.length; i++) {
+            if ((dirv === "UP") ? (kms[i] <= approachStart && kms[i] >= approachEnd) : (kms[i] >= approachStart && kms[i] <= approachEnd)) approachSpeeds.push(spd[i]);
+            if ((dirv === "UP") ? (kms[i] <= exitStart && kms[i] >= exitEnd) : (kms[i] >= exitStart && kms[i] <= exitEnd)) exitSpeeds.push(spd[i]);
+        }
+        
+        let approachWasDecelerating = false, reachedLimit = false;
+        if (approachSpeeds.length >= 4) {
+            const third = Math.floor(approachSpeeds.length / 3);
+            const avgFirst = approachSpeeds.slice(0, Math.max(1, third)).reduce((a, b) => a + b, 0) / Math.max(1, third);
+            const avgLast = approachSpeeds.slice(-Math.max(1, third)).reduce((a, b) => a + b, 0) / Math.max(1, third);
+            approachWasDecelerating = (avgFirst - avgLast) > 5;
+        }
+        let minSpeedInZone = Math.min(...pointsInZone.map(p => p.speed));
+        reachedLimit = minSpeedInZone <= p.speed + 5;
+        
+        let exitMaxSpeed = exitSpeeds.length > 0 ? Math.max(...exitSpeeds) : 0;
+        let exitMaintainedSpeed = exitMaxSpeed <= p.speed + 5;
+        
+        let isViolation = false;
+        if (approachWasDecelerating && reachedLimit) isViolation = false;
+        else if (exitMaintainedSpeed && maxExcessInZone <= 10) isViolation = false;
+        else if (maxExcessInZone > 15) isViolation = true;
+        else if (!approachWasDecelerating && !reachedLimit) isViolation = true;
+        else if (!approachWasDecelerating && maxExcessInZone > 10) isViolation = true;
+        
+        if (isViolation) {
+            psrViolations.push({ startKM: p.startKM, endKM: p.endKM, limit: p.speed, actualSpeed: maxSpeedInZone, maxExcess: maxExcessInZone });
+        }
+    });
+    
+    psrViolations.sort((a, b) => dirv === "UP" ? b.startKM - a.startKM : a.startKM - b.startKM);
+}
+
+/* ---------------- TSR OVERSPEED SUMMARY ---------------- */
+function tsrOverspeedSummary(kms, spd, dirv, startStation, endStation) {
+    if (tsrZones.length === 0) return;
+    
+    const startKM = stationData[startStation][dirv];
+    const endKM = stationData[endStation][dirv];
+    tsrViolations = []; 
+    
+    console.log("=== TSR OVERSPEED ANALYSIS ===");
+    
+    tsrZones.forEach((tsr, index) => {
+        let overlaps = false;
+        if (dirv === "UP") {
+            if (tsr.from <= startKM && tsr.to >= endKM) overlaps = true;
+            else if (tsr.from <= startKM && tsr.from >= endKM) overlaps = true;
+            else if (tsr.to <= startKM && tsr.to >= endKM) overlaps = true;
+        } else {
+            if (tsr.from >= startKM && tsr.to <= endKM) overlaps = true;
+            else if (tsr.from >= startKM && tsr.from <= endKM) overlaps = true;
+            else if (tsr.to >= startKM && tsr.to <= endKM) overlaps = true;
+        }
+        if (!overlaps) return;
+        
+        const pointsInZone = [];
+        for (let i = 0; i < kms.length; i++) {
+            const inTSRZone = (dirv === "UP") ? (kms[i] <= tsr.from && kms[i] >= tsr.to) : (kms[i] >= tsr.from && kms[i] <= tsr.to);
+            if (inTSRZone) pointsInZone.push({ km: kms[i], speed: spd[i] });
+        }
+        
+        if (pointsInZone.length === 0) return;
+        
+        let maxSpeedInZone = 0, maxExcessInZone = 0;
+        pointsInZone.forEach(point => {
+            const excess = Math.max(0, point.speed - tsr.speed);
+            if (point.speed > maxSpeedInZone) maxSpeedInZone = point.speed;
+            if (excess > maxExcessInZone) maxExcessInZone = excess;
+        });
+        
+        if (maxExcessInZone <= 5) return;
+
+        // Step 2: OFFSET COMPLIANCE CHECK (Fix for KM mismatch)
+        let searchStart, searchEnd;
+        const offsetBuffer = 2.0; 
+        if (dirv === "UP") {
+            searchStart = tsr.from + offsetBuffer;
+            searchEnd = tsr.to - offsetBuffer;
+        } else {
+            searchStart = tsr.from - offsetBuffer;
+            searchEnd = tsr.to + offsetBuffer;
+        }
+        
+        let offsetComplianceFound = false;
+        let complianceStart = null;
+        
+        for (let i = 0; i < kms.length; i++) {
+            const km = kms[i];
+            const speed = spd[i];
+            const inSearch = (dirv === "UP") ? (km <= searchStart && km >= searchEnd) : (km >= searchStart && km <= searchEnd);
+            
+            if (inSearch && speed <= tsr.speed + 5) {
+                if (complianceStart === null) complianceStart = km;
+            } else {
+                if (complianceStart !== null) {
+                    const segmentLength = Math.abs(kms[i-1] - complianceStart);
+                    if (segmentLength >= 0.2) { // Sustained for at least 200 meters
+                        offsetComplianceFound = true;
+                        console.log(`  TSR ${tsr.from}-${tsr.to}: OFFSET COMPLIANCE at ${complianceStart.toFixed(3)} to ${kms[i-1].toFixed(3)} (${segmentLength.toFixed(3)}km)`);
+                        break;
+                    }
+                    complianceStart = null;
+                }
+            }
+        }
+        if (!offsetComplianceFound && complianceStart !== null) {
+            const segmentLength = Math.abs(kms[kms.length-1] - complianceStart);
+            if (segmentLength >= 0.2) offsetComplianceFound = true;
+        }
+        
+        if (offsetComplianceFound) return; 
+
+        // Step 3: STRICT CHECKING 
+        let approachStart = dirv === "UP" ? tsr.from + 2.0 : tsr.from - 2.0;
+        let approachEnd = tsr.from;
+        let exitStart = tsr.to;
+        let exitEnd = dirv === "UP" ? tsr.to - 2.0 : tsr.to + 2.0;
+        
+        let approachSpeeds = [], exitSpeeds = [];
+        for (let i = 0; i < kms.length; i++) {
+            if ((dirv === "UP") ? (kms[i] <= approachStart && kms[i] >= approachEnd) : (kms[i] >= approachStart && kms[i] <= approachEnd)) approachSpeeds.push(spd[i]);
+            if ((dirv === "UP") ? (kms[i] <= exitStart && kms[i] >= exitEnd) : (kms[i] >= exitStart && kms[i] <= exitEnd)) exitSpeeds.push(spd[i]);
+        }
+        
+        let approachWasDecelerating = false, reachedLimit = false;
+        if (approachSpeeds.length >= 4) {
+            const third = Math.floor(approachSpeeds.length / 3);
+            const avgFirst = approachSpeeds.slice(0, Math.max(1, third)).reduce((a, b) => a + b, 0) / Math.max(1, third);
+            const avgLast = approachSpeeds.slice(-Math.max(1, third)).reduce((a, b) => a + b, 0) / Math.max(1, third);
+            approachWasDecelerating = (avgFirst - avgLast) > 5;
+        }
+        let minSpeedInZone = Math.min(...pointsInZone.map(p => p.speed));
+        reachedLimit = minSpeedInZone <= tsr.speed + 5;
+        
+        let exitMaxSpeed = exitSpeeds.length > 0 ? Math.max(...exitSpeeds) : 0;
+        let exitMaintainedSpeed = exitMaxSpeed <= tsr.speed + 5;
+        
+        let isViolation = false;
+        if (approachWasDecelerating && reachedLimit) isViolation = false;
+        else if (exitMaintainedSpeed && maxExcessInZone <= 10) isViolation = false;
+        else if (maxExcessInZone > 15) isViolation = true;
+        else if (!approachWasDecelerating && !reachedLimit) isViolation = true;
+        else if (!approachWasDecelerating && maxExcessInZone > 10) isViolation = true;
+        
+        if (isViolation) {
+            tsrViolations.push({ startKM: tsr.from, endKM: tsr.to, limit: tsr.speed, actualSpeed: maxSpeedInZone, maxExcess: maxExcessInZone });
+        }
+    });
+}
+
+/* ---------------- PSR COMPLIANCE NEAR VIOLATION ZONES (BUFFER AREAS) ---------------- */
+function psrNearZoneCompliance(kms, spd, dirv, startStation, endStation, bufferKm = 2.0) {
+    const tb = document.getElementById("psrNearComplianceTable");
+    tb.innerHTML = "";
+    
+    const startKM = stationData[startStation][dirv];
+    const endKM = stationData[endStation][dirv];
+    
+    const key = dirv === "UP" ? "KNW-BSL" : "BSL-KNW";
+    const allPSRs = psrData[key];
+    const nearCompliant = [];
+    
+    console.log("=== PSR NEAR VIOLATION ZONE COMPLIANCE (BUFFER AREAS) ===");
+    
+    // Clear compliance map
+    psrComplianceMap.clear();
+    
+    // Only check zones that have violations
+    psrViolations.forEach(violation => {
+        // Find the corresponding PSR zone
+        const p = allPSRs.find(psr => 
+            Math.abs(psr.startKM - violation.startKM) < 0.01 && 
+            Math.abs(psr.endKM - violation.endKM) < 0.01
+        );
+        
+        if (!p) return;
+        
+        console.log(`\nChecking buffer areas for violation zone: ${p.startKM} → ${p.endKM} (Limit: ${p.speed})`);
+        
+        // Define buffer areas before and after the zone
+        let beforeStart, beforeEnd, afterStart, afterEnd;
+        
+        if (dirv === "UP") {
+            // For UP: higher KM to lower KM
+            // Before zone (approaching from higher KM) - area just before the zone starts
+            beforeStart = p.startKM + bufferKm;
+            beforeEnd = p.startKM;
+            // After zone (exiting to lower KM) - area just after the zone ends
+            afterStart = p.endKM;
+            afterEnd = p.endKM - bufferKm;
+            console.log(`  Before zone: ${beforeStart.toFixed(3)} → ${beforeEnd.toFixed(3)}`);
+            console.log(`  After zone: ${afterStart.toFixed(3)} → ${afterEnd.toFixed(3)}`);
+        } else {
+            // For DOWN: lower KM to higher KM
+            // Before zone (approaching from lower KM)
+            beforeStart = p.startKM - bufferKm;
+            beforeEnd = p.startKM;
+            // After zone (exiting to higher KM)
+            afterStart = p.endKM;
+            afterEnd = p.endKM + bufferKm;
+            console.log(`  Before zone: ${beforeStart.toFixed(3)} → ${beforeEnd.toFixed(3)}`);
+            console.log(`  After zone: ${afterStart.toFixed(3)} → ${afterEnd.toFixed(3)}`);
+        }
+        
+        const zoneKey = `${p.startKM.toFixed(3)}-${p.endKM.toFixed(3)}`;
+        const complianceSections = [];
+        
+        // Check before zone (area before the PSR starts)
+        const beforePoints = [];
+        for (let i = 0; i < kms.length; i++) {
+            const km = kms[i];
+            const inBefore = (dirv === "UP") ? (km <= beforeStart && km >= beforeEnd) : (km >= beforeStart && km <= beforeEnd);
+            if (inBefore) {
+                beforePoints.push({ km: kms[i], speed: spd[i] });
+            }
+        }
+        
+        if (beforePoints.length >= 2) {
+            // Check if speed in before zone is following the PSR limit (within tolerance)
+            const maxSpeed = Math.max(...beforePoints.map(p => p.speed));
+            const limit = p.speed;
+            const extendedLimit = limit + 5;
+            
+            if (maxSpeed <= extendedLimit) {
+                let start = beforeStart, end = beforeEnd;
+                // Ensure correct order based on direction
+                if (dirv === "UP") {
+                    if (start < end) [start, end] = [end, start];
+                } else {
+                    if (start > end) [start, end] = [end, start];
+                }
+                
+                const distance = dirv === "UP" ? 
+                    `${((p.startKM - start) * 1000).toFixed(0)}m before` : 
+                    `${((start - p.startKM) * 1000).toFixed(0)}m before`;
+                
+                const compliantSection = {
+                    startKM: start.toFixed(3),
+                    endKM: end.toFixed(3),
+                    nearestZone: zoneKey,
+                    limit: limit,
+                    actualSpeed: maxSpeed.toFixed(1),
+                    distance: distance
+                };
+                
+                nearCompliant.push(compliantSection);
+                complianceSections.push({ startKM: start.toFixed(3), endKM: end.toFixed(3) });
+                
+                console.log(`  ✅ Before zone compliant: Max speed ${maxSpeed.toFixed(1)} at ${distance}`);
+            }
+        }
+        
+        // Check after zone (area after the PSR ends)
+        const afterPoints = [];
+        for (let i = 0; i < kms.length; i++) {
+            const km = kms[i];
+            const inAfter = (dirv === "UP") ? (km <= afterStart && km >= afterEnd) : (km >= afterStart && km <= afterEnd);
+            if (inAfter) {
+                afterPoints.push({ km: kms[i], speed: spd[i] });
+            }
+        }
+        
+        if (afterPoints.length >= 2) {
+            const maxSpeed = Math.max(...afterPoints.map(p => p.speed));
+            const limit = p.speed;
+            const extendedLimit = limit + 5;
+            
+            if (maxSpeed <= extendedLimit) {
+                let start = afterStart, end = afterEnd;
+                // Ensure correct order based on direction
+                if (dirv === "UP") {
+                    if (start < end) [start, end] = [end, start];
+                } else {
+                    if (start > end) [start, end] = [end, start];
+                }
+                
+                const distance = dirv === "UP" ? 
+                    `${((end - p.endKM) * 1000).toFixed(0)}m after` : 
+                    `${((p.endKM - end) * 1000).toFixed(0)}m after`;
+                
+                const compliantSection = {
+                    startKM: start.toFixed(3),
+                    endKM: end.toFixed(3),
+                    nearestZone: zoneKey,
+                    limit: limit,
+                    actualSpeed: maxSpeed.toFixed(1),
+                    distance: distance
+                };
+                
+                nearCompliant.push(compliantSection);
+                complianceSections.push({ startKM: start.toFixed(3), endKM: end.toFixed(3) });
+                
+                console.log(`  ✅ After zone compliant: Max speed ${maxSpeed.toFixed(1)} at ${distance}`);
+            }
+        }
+        
+        // Store compliance sections for this zone
+        if (complianceSections.length > 0) {
+            psrComplianceMap.set(zoneKey, complianceSections);
+        }
+    });
+    
+    if (nearCompliant.length === 0) {
+        tb.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#666;">No compliant sections found near violation zones</td></tr>`;
+        document.getElementById('psrNearComplianceSection').style.display = 'none';
+    } else {
+        nearCompliant.forEach(z => {
+            const row = document.createElement("tr");
+            row.style.backgroundColor = "#d4edda";
+            row.innerHTML = `
+                <td>${z.startKM}</td>
+                <td>${z.endKM}</td>
+                <td>${z.nearestZone}</td>
+                <td>${z.limit}</td>
+                <td>${z.actualSpeed}</td>
+                <td>${z.distance}</td>
+            `;
+            tb.appendChild(row);
+        });
+        document.getElementById('psrNearComplianceSection').style.display = 'block';
+    }
+}
+
+/* ---------------- TSR COMPLIANCE NEAR VIOLATION ZONES (BUFFER AREAS) ---------------- */
+function tsrNearZoneCompliance(kms, spd, dirv, startStation, endStation, bufferKm = 2.0) {
+    const tb = document.getElementById("tsrNearComplianceTable");
+    tb.innerHTML = "";
+    
+    if (tsrZones.length === 0) {
+        tb.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#666;">No TSR data uploaded</td></tr>`;
+        document.getElementById('tsrNearComplianceSection').style.display = 'none';
+        return;
+    }
+    
+    const startKM = stationData[startStation][dirv];
+    const endKM = stationData[endStation][dirv];
+    const nearCompliant = [];
+    
+    console.log("=== TSR NEAR VIOLATION ZONE COMPLIANCE (BUFFER AREAS) ===");
+    
+    // Clear compliance map
+    tsrComplianceMap.clear();
+    
+    // Only check zones that have violations
+    tsrViolations.forEach(violation => {
+        // Find the corresponding TSR zone
+        const tsr = tsrZones.find(t => 
+            Math.abs(t.from - violation.startKM) < 0.01 && 
+            Math.abs(t.to - violation.endKM) < 0.01
+        );
+        
+        if (!tsr) return;
+        
+        console.log(`\nChecking buffer areas for violation zone: ${tsr.from} → ${tsr.to} (Limit: ${tsr.speed})`);
+        
+        // Define buffer areas before and after the zone
+        let beforeStart, beforeEnd, afterStart, afterEnd;
+        
+        if (dirv === "UP") {
+            beforeStart = tsr.from + bufferKm;
+            beforeEnd = tsr.from;
+            afterStart = tsr.to;
+            afterEnd = tsr.to - bufferKm;
+            console.log(`  Before zone: ${beforeStart.toFixed(3)} → ${beforeEnd.toFixed(3)}`);
+            console.log(`  After zone: ${afterStart.toFixed(3)} → ${afterEnd.toFixed(3)}`);
+        } else {
+            beforeStart = tsr.from - bufferKm;
+            beforeEnd = tsr.from;
+            afterStart = tsr.to;
+            afterEnd = tsr.to + bufferKm;
+            console.log(`  Before zone: ${beforeStart.toFixed(3)} → ${beforeEnd.toFixed(3)}`);
+            console.log(`  After zone: ${afterStart.toFixed(3)} → ${afterEnd.toFixed(3)}`);
+        }
+        
+        const zoneKey = `${tsr.from.toFixed(3)}-${tsr.to.toFixed(3)}`;
+        const complianceSections = [];
+        
+        // Check before zone
+        const beforePoints = [];
+        for (let i = 0; i < kms.length; i++) {
+            const km = kms[i];
+            const inBefore = (dirv === "UP") ? (km <= beforeStart && km >= beforeEnd) : (km >= beforeStart && km <= beforeEnd);
+            if (inBefore) {
+                beforePoints.push({ km: kms[i], speed: spd[i] });
+            }
+        }
+        
+        if (beforePoints.length >= 2) {
+            const maxSpeed = Math.max(...beforePoints.map(p => p.speed));
+            const limit = tsr.speed;
+            const extendedLimit = limit + 5;
+            
+            if (maxSpeed <= extendedLimit) {
+                let start = beforeStart, end = beforeEnd;
+                if (dirv === "UP") {
+                    if (start < end) [start, end] = [end, start];
+                } else {
+                    if (start > end) [start, end] = [end, start];
+                }
+                
+                const distance = dirv === "UP" ? 
+                    `${((tsr.from - start) * 1000).toFixed(0)}m before` : 
+                    `${((start - tsr.from) * 1000).toFixed(0)}m before`;
+                
+                const compliantSection = {
+                    startKM: start.toFixed(3),
+                    endKM: end.toFixed(3),
+                    nearestZone: zoneKey,
+                    limit: limit,
+                    actualSpeed: maxSpeed.toFixed(1),
+                    distance: distance
+                };
+                
+                nearCompliant.push(compliantSection);
+                complianceSections.push({ startKM: start.toFixed(3), endKM: end.toFixed(3) });
+                
+                console.log(`  ✅ Before zone compliant: Max speed ${maxSpeed.toFixed(1)} at ${distance}`);
+            }
+        }
+        
+        // Check after zone
+        const afterPoints = [];
+        for (let i = 0; i < kms.length; i++) {
+            const km = kms[i];
+            const inAfter = (dirv === "UP") ? (km <= afterStart && km >= afterEnd) : (km >= afterStart && km <= afterEnd);
+            if (inAfter) {
+                afterPoints.push({ km: kms[i], speed: spd[i] });
+            }
+        }
+        
+        if (afterPoints.length >= 2) {
+            const maxSpeed = Math.max(...afterPoints.map(p => p.speed));
+            const limit = tsr.speed;
+            const extendedLimit = limit + 5;
+            
+            if (maxSpeed <= extendedLimit) {
+                let start = afterStart, end = afterEnd;
+                if (dirv === "UP") {
+                    if (start < end) [start, end] = [end, start];
+                } else {
+                    if (start > end) [start, end] = [end, start];
+                }
+                
+                const distance = dirv === "UP" ? 
+                    `${((end - tsr.to) * 1000).toFixed(0)}m after` : 
+                    `${((tsr.to - end) * 1000).toFixed(0)}m after`;
+                
+                const compliantSection = {
+                    startKM: start.toFixed(3),
+                    endKM: end.toFixed(3),
+                    nearestZone: zoneKey,
+                    limit: limit,
+                    actualSpeed: maxSpeed.toFixed(1),
+                    distance: distance
+                };
+                
+                nearCompliant.push(compliantSection);
+                complianceSections.push({ startKM: start.toFixed(3), endKM: end.toFixed(3) });
+                
+                console.log(`  ✅ After zone compliant: Max speed ${maxSpeed.toFixed(1)} at ${distance}`);
+            }
+        }
+        
+        // Store compliance sections for this zone
+        if (complianceSections.length > 0) {
+            tsrComplianceMap.set(zoneKey, complianceSections);
+        }
+    });
+    
+    if (nearCompliant.length === 0) {
+        tb.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#666;">No compliant sections found near violation zones</td></tr>`;
+        document.getElementById('tsrNearComplianceSection').style.display = 'none';
+    } else {
+        nearCompliant.forEach(z => {
+            const row = document.createElement("tr");
+            row.style.backgroundColor = "#d4edda";
+            row.innerHTML = `
+                <td>${z.startKM}</td>
+                <td>${z.endKM}</td>
+                <td>${z.nearestZone}</td>
+                <td>${z.limit}</td>
+                <td>${z.actualSpeed}</td>
+                <td>${z.distance}</td>
+            `;
+            tb.appendChild(row);
+        });
+        document.getElementById('tsrNearComplianceSection').style.display = 'block';
+    }
+}
+
+/* ---------------- PLOT CHART ---------------- */
+function plotStations(kms, spd, dirv, startStation, endStation) {
+    if (chart) chart.destroy();
+
+    const ctx = document.getElementById("chart").getContext("2d");
+    
+    const startKM = stationData[startStation][dirv];
+    const endKM = stationData[endStation][dirv];
+    
+    const routeStations = [];
+    Object.entries(stationData).forEach(([code, data]) => {
+        const stationKM = data[dirv];
+        
+        if (dirv === "UP") {
+            if (stationKM <= startKM && stationKM >= endKM) {
+                routeStations.push({ code, km: stationKM });
+            }
+        } else {
+            if (stationKM >= startKM && stationKM <= endKM) {
+                routeStations.push({ code, km: stationKM });
+            }
+        }
+    });
+    
+    routeStations.sort((a, b) => dirv === "UP" ? b.km - a.km : a.km - b.km);
+    
+    const minKM = Math.min(...kms);
+    const maxKM = Math.max(...kms);
+    
+    let chartMin, chartMax;
+    if (dirv === "UP") {
+        chartMin = maxKM;
+        chartMax = minKM;
+    } else {
+        chartMin = minKM;
+        chartMax = maxKM;
+    }
+    
+    const padding = 0.2;
+    if (dirv === "UP") {
+        chartMin += padding;
+        chartMax -= padding;
+    } else {
+        chartMin -= padding;
+        chartMax += padding;
+    }
+    
+    if (chartMin > chartMax) {
+        [chartMin, chartMax] = [chartMax, chartMin];
+    }
+    
+    const range = Math.abs(chartMax - chartMin);
+    let tickInterval;
+    if (range > 100) tickInterval = 5;
+    else if (range > 50) tickInterval = 2;
+    else if (range > 20) tickInterval = 1;
+    else tickInterval = 0.5;
+
+    const chartData = {
+        datasets: [
+            {
+                label: "Train Speed",
+                data: kms.map((k, i) => ({ x: k, y: spd[i] })),
+                borderColor: "rgba(0, 123, 255, 1)",
+                backgroundColor: "rgba(0, 123, 255, 0.1)",
+                borderWidth: 2,
+                tension: 0.2,
+                pointRadius: 0,
+                fill: true,
+                order: 4
+            },
+            {
+                label: "PSR Limit",
+                data: kms.map(k => ({ x: k, y: getLimit(k, dirv) })),
+                borderColor: "rgba(40, 167, 69, 1)",
+                borderDash: [5, 5],
+                borderWidth: 1.5,
+                pointRadius: 0,
+                fill: false,
+                order: 3
+            },
+            {
+                label: "TSR Limit",
+                data: kms.map(k => ({ x: k, y: getTSRLimit(k, dirv) })),
+                borderColor: "rgba(220, 53, 69, 1)",
+                borderDash: [3, 3],
+                borderWidth: 1.5,
+                pointRadius: 0,
+                fill: false,
+                order: 2
+            },
+            {
+                label: `MPS (${mpsValue} km/h)`,
+                data: kms.map(k => ({ x: k, y: mpsValue })),
+                borderColor: "rgba(255, 193, 7, 1)",
+                borderDash: [10, 5],
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false,
+                order: 1
+            }
+        ]
+    };
+
+    const annotationConfig = { annotations: {} };
+    
+    // Add station annotations
+    routeStations.forEach((station, index) => {
+        if (station.km >= Math.min(...kms) && station.km <= Math.max(...kms)) {
+            annotationConfig.annotations[`station-${station.code}-${index}`] = {
+                type: 'line',
+                xMin: station.km,
+                xMax: station.km,
+                yMin: 0,
+                yMax: 'max',
+                borderColor: 'rgba(128, 128, 128, 0.3)',
+                borderWidth: 1,
+                borderDash: [2, 2],
+                label: {
+                    display: true,
+                    content: station.code,
+                    position: 'bottom',
+                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                    color: '#333',
+                    font: { size: 9, weight: 'bold' },
+                    padding: 3,
+                    borderRadius: 2,
+                    rotation: 0
+                }
+            };
+        }
+    });
+    
+    // ========== ADD PSR GREEN TRIANGLE MARKERS ==========
+    const psrAnnotations = getPSRAnnotations(kms, dirv);
+    Object.assign(annotationConfig.annotations, psrAnnotations);
+    
+    // ========== ADD TSR RED TRIANGLE MARKERS ==========
+    if (tsrZones && tsrZones.length > 0) {
+        const tsrAnnotations = getTSRAnnotations(kms, dirv);
+        Object.assign(annotationConfig.annotations, tsrAnnotations);
+    }
+
+    chart = new Chart(ctx, {
+        type: "line",
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            layout: { padding: { top: 30, bottom: 20, left: 10, right: 10 } },
+            plugins: {
+                legend: { position: 'top', labels: { font: { size: 12 }, padding: 15, usePointStyle: true, pointStyle: 'line' } },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    callbacks: {
+                        title: function(context) {
+                            const km = context[0].parsed.x;
+                            const nearestStation = findNearestStation(km, dirv);
+                            return `KM: ${km.toFixed(3)} (Near ${nearestStation})`;
+                        },
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y.toFixed(1)} km/h`;
+                        }
+                    }
+                },
+                annotation: annotationConfig,
+                zoom: {
+                    pan: { enabled: true, mode: 'x', modifierKey: 'ctrl' },
+                    zoom: { wheel: { enabled: true, modifierKey: 'ctrl' }, pinch: { enabled: true }, drag: { enabled: true, mode: 'x' } }
+                }
+            },
+            scales: {
+                x: {
+                    type: "linear",
+                    title: { display: true, text: "Track Distance (km)", font: { size: 14, weight: 'bold' } },
+                    min: chartMin,
+                    max: chartMax,
+                    reverse: dirv === "UP",
+                    ticks: { stepSize: tickInterval, callback: function(value) { return value.toFixed(1); }, autoSkip: false, maxRotation: 45, maxTicksLimit: 30 }
+                },
+                y: {
+                    title: { display: true, text: "Speed (km/h)", font: { size: 14, weight: 'bold' } },
+                    beginAtZero: true,
+                    suggestedMax: Math.max(...spd) * 1.2,
+                    ticks: { stepSize: 10, maxTicksLimit: 12 }
+                }
+            }
+        }
+    });
+    
+    setTimeout(() => {
+        if (chart) {
+            chartImageData = chart.toBase64Image();
+        }
+    }, 800);
+}
+
+/* ---------------- REPORT FUNCTIONS ---------------- */
+function downloadReport() {
+    if (!chartImageData) {
+        alert("Please process data first to generate the chart");
+        return;
+    }
+    
+    // Get CLI name for signature
+    const cliName = document.getElementById('cliName').value || "______________";
+    
+    // Create a new window for the report
+    const reportWindow = window.open('', '_blank');
+    
+    // Get the report content (excluding controls and action buttons)
+    const reportContent = document.getElementById('reportContent').cloneNode(true);
+    
+    // Remove the canvas from the cloned content (we'll add the image instead)
+    const chartContainer = reportContent.querySelector('.chart-container');
+    if (chartContainer) {
+        chartContainer.innerHTML = `<img src="${chartImageData}" style="width:100%; height:100%; object-fit:contain;" />`;
+    }
+    
+    // Update signature in cloned content
+    const signatureSpan = reportContent.querySelector('#signatureCliName');
+    if (signatureSpan) {
+        signatureSpan.textContent = cliName;
+    }
+    
+    // Create HTML for the report with compact layout
+    const reportHTML = `
+        <html>
+        <head>
+            <title>Railway Speed Profile Report - MEDHA</title>
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 0.2cm;
+                    padding: 0;
+                    font-size: 9pt;
+                    background: white;
+                }
+                .container {
+                    max-width: 100%;
+                }
+                h2 { 
+                    color: #0066cc; 
+                    text-align: center; 
+                    margin: 0 0 0.1cm 0;
+                    font-size: 16pt;
+                }
+                .details-container {
+                    margin: 0 0 0.1cm 0;
+                    padding: 0.1cm;
+                    border: 1px solid #ddd;
+                }
+                .chart-container {
+                    page-break-inside: avoid;
+                    height: 400px !important;
+                    margin: 0.1cm 0;
+                    border: 1px solid #ddd;
+                }
+                .chart-container img {
+                    width: 100% !important;
+                    height: 100% !important;
+                    object-fit: contain;
+                }
+                table { 
+                    page-break-inside: avoid;
+                    font-size: 8pt;
+                    margin: 0.1cm 0;
+                    border-collapse: collapse;
+                    width: 100%;
+                }
+                th, td { 
+                    border: 1px solid #999; 
+                    padding: 0.05cm 0.1cm; 
+                    text-align: center;
+                    font-size: 8pt;
+                }
+                th { background: #e8f0fe; }
+                .report-section {
+                    page-break-inside: avoid;
+                    margin-bottom: 0.15cm;
+                    border: 1px solid #ddd;
+                    padding: 0.1cm;
+                }
+                .signature-area {
+                    margin-top: 0.2cm;
+                    padding: 0.1cm;
+                    border-top: 2px dashed #666;
+                    font-size: 9pt;
+                }
+                @page { 
+                    size: A4 landscape; 
+                    margin: 0.2cm;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>🚆 Railway Speed Profile Analysis Report - MEDHA Format</h2>
+                ${reportContent.innerHTML}
+            </div>
+            <script>
+                window.onload = function() {
+                    setTimeout(function() {
+                        window.print();
+                    }, 200);
+                }
+            <\/script>
+        </body>
+        </html>
+    `;
+    
+    reportWindow.document.write(reportHTML);
+    reportWindow.document.close();
+}
+
+function printReport() {
+    if (!chartImageData) {
+        alert("Please process data first to generate the chart");
+        return;
+    }
+    
+    // Get CLI name for signature
+    const cliName = document.getElementById('cliName').value || "______________";
+    
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    
+    // Get the report content
+    const reportContent = document.getElementById('reportContent').cloneNode(true);
+    
+    // Replace canvas with image - keep full size
+    const chartContainer = reportContent.querySelector('.chart-container');
+    if (chartContainer) {
+        chartContainer.innerHTML = `<img src="${chartImageData}" style="width:100%; height:100%; object-fit:contain;" />`;
+    }
+    
+    // Update signature in cloned content
+    const signatureSpan = reportContent.querySelector('#signatureCliName');
+    if (signatureSpan) {
+        signatureSpan.textContent = cliName;
+    }
+    
+    // Get train details for title
+    const trainNo = document.getElementById('detTrainNoLoco').textContent;
+    const fromStn = document.getElementById('detFromStn').textContent;
+    const toStn = document.getElementById('detToStn').textContent;
+    const dirv = document.getElementById('detDirection').textContent;
+    
+    // Create print HTML with compact layout
+    const printHTML = `
+        <html>
+        <head>
+            <title>Railway Speed Profile Report - MEDHA ${trainNo} ${fromStn}-${toStn} ${dirv}</title>
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    margin: 0.2cm;
+                    padding: 0;
+                    font-size: 9pt;
+                    background: white;
+                }
+                .container {
+                    max-width: 100%;
+                }
+                h2 { 
+                    color: #0066cc; 
+                    text-align: center; 
+                    margin: 0 0 0.1cm 0;
+                    font-size: 16pt;
+                }
+                .details-container {
+                    margin: 0 0 0.1cm 0;
+                    padding: 0.1cm;
+                    border: 1px solid #ddd;
+                    page-break-after: avoid;
+                }
+                .chart-container {
+                    page-break-inside: avoid;
+                    height: 400px !important;
+                    margin: 0.1cm 0;
+                    border: 1px solid #ddd;
+                }
+                .chart-container img {
+                    width: 100% !important;
+                    height: 100% !important;
+                    object-fit: contain;
+                }
+                table { 
+                    page-break-inside: avoid;
+                    font-size: 8pt;
+                    margin: 0.1cm 0;
+                    border-collapse: collapse;
+                    width: 100%;
+                }
+                th, td { 
+                    border: 1px solid #999; 
+                    padding: 0.05cm 0.1cm; 
+                    text-align: center;
+                    font-size: 8pt;
+                }
+                th { background: #e8f0fe; }
+                .report-section {
+                    page-break-inside: avoid;
+                    margin-bottom: 0.15cm;
+                    border: 1px solid #ddd;
+                    padding: 0.1cm;
+                }
+                .signature-area {
+                    margin-top: 0.2cm;
+                    padding: 0.1cm;
+                    border-top: 2px dashed #666;
+                    font-size: 9pt;
+                }
+                @page { 
+                    size: A4 landscape; 
+                    margin: 0.2cm;
+                }
+                @media print {
+                    body { margin: 0; }
+                    .report-section { break-inside: avoid; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>🚆 Railway Speed Profile Analysis Report - MEDHA Format</h2>
+                <h4 style="text-align: center; margin: 0 0 0.1cm 0; font-weight: normal; font-size: 11pt;">
+                    Train No: ${trainNo} | ${fromStn} → ${toStn} | Direction: ${dirv}
+                </h4>
+                ${reportContent.innerHTML}
+            </div>
+            <script>
+                window.onload = function() {
+                    window.print();
+                    window.onafterprint = function() {
+                        window.close();
+                    };
+                }
+            <\/script>
+        </body>
+        </html>
+    `;
+    
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
+}
+
+// Initialize with default values and today's date
+document.getElementById('start').value = 'NGP';
+document.getElementById('end').value = 'IGP';
+document.getElementById('trainDate').valueAsDate = new Date();
+// Auto-detect train type if train number is pre-filled
+autoDetectTrainType();
+</script>
+</body>
+</html>
